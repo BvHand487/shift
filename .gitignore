@@ -1,0 +1,5 @@
+.vscode/
+build/
+
+# Ignore testing file
+file.shf
