@@ -34,11 +34,11 @@ int compile(const std::string& path)
     for (auto t : tokens)
         std::cout << t << std::endl;
 
-    // std::cout << "---\n";
+    std::cout << "\n";
 
-    // auto ast = parse(tokens);
-    // for (const auto& a : ast)
-    //     std::cout << *a << std::endl;
+    auto ast = parse(tokens);
+    for (const auto& a : ast)
+        std::cout << *a << std::endl;
 
     return 0;
 }

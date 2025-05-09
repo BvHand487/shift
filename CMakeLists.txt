@@ -4,6 +4,7 @@ project(shift)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
 set(CMAKE_BUILD_TYPE Debug)
 file(GLOB SOURCES "src/*.cpp")

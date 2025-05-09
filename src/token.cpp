@@ -14,10 +14,10 @@ std::string token_type_to_string(TokenType type)
 
         case tok_comment: return "tok_comment";
 
-        case tok_left_parentheses: return "tok_left_parentheses";
-        case tok_right_parentheses: return "tok_right_parentheses";
-        case tok_left_braces: return "tok_left_braces";
-        case tok_right_braces: return "tok_right_braces";
+        case tok_open_paren: return "tok_open_paren";
+        case tok_close_paren: return "tok_close_paren";
+        case tok_open_brace: return "tok_open_brace";
+        case tok_close_brace: return "tok_close_brace";
 
         // literals
         case tok_number: return "tok_number";
@@ -33,14 +33,14 @@ std::string token_type_to_string(TokenType type)
 
         case tok_plus: return "tok_plus";
         case tok_minus: return "tok_minus";
-        case tok_multiplication: return "tok_multiplication";
-        case tok_division: return "tok_division";
+        case tok_star: return "tok_star";
+        case tok_slash: return "tok_slash";
         case tok_exponentiation: return "tok_exponentiation";
 
-        case tok_bitwise_xor: return "tok_bitwise_xor";
-        case tok_bitwise_not: return "tok_bitwise_not";
-        case tok_bitwise_and: return "tok_bitwise_and";
-        case tok_bitwise_or: return "tok_bitwise_or";
+        case tok_caret: return "tok_caret";
+        case tok_tilde: return "tok_tilde";
+        case tok_ampersand: return "tok_ampersand";
+        case tok_pipe: return "tok_pipe";
         case tok_not: return "tok_not";
         case tok_and: return "tok_and";
         case tok_or: return "tok_or";

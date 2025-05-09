@@ -11,7 +11,7 @@ UnaryOps token_to_unary_op(TokenType type)
         case tok_plus: return UnaryOps::Addition;
         case tok_minus: return UnaryOps::Subtraction;
         case tok_not: return UnaryOps::Not;
-        case tok_bitwise_not: return UnaryOps::BitwiseNot;
+        case tok_tilde: return UnaryOps::BitwiseNot;
 
         default:
             return UnaryOps::None;
@@ -22,10 +22,29 @@ BinaryOps token_to_binary_op(TokenType type)
 {
     switch (type)
     {
+        // Arithmetic
         case tok_plus: return BinaryOps::Addition;
         case tok_minus: return BinaryOps::Subtraction;
-        case tok_multiplication: return BinaryOps::Multiplication;
-        case tok_division: return BinaryOps::Division;
+        case tok_star: return BinaryOps::Multiplication;
+        case tok_slash: return BinaryOps::Division;
+        case tok_exponentiation: return BinaryOps::Exponentiation;
+
+        // Logical
+        case tok_and: return BinaryOps::And;
+        case tok_or: return BinaryOps::Or;
+
+        // Bitwise
+        case tok_caret: return BinaryOps::BitXor;
+        case tok_ampersand: return BinaryOps::BitAnd;
+        case tok_pipe: return BinaryOps::BitOr;
+
+        // Comparison
+        case tok_gt: return BinaryOps::Greater;
+        case tok_gte: return BinaryOps::GreaterEqual;
+        case tok_lt: return BinaryOps::Less;
+        case tok_lte: return BinaryOps::LessEqual;
+        case tok_eq: return BinaryOps::Equal;
+        case tok_neq: return BinaryOps::NotEqual;
 
         default:
             return BinaryOps::None;
@@ -36,22 +55,24 @@ int token_op_to_precedence(TokenType type)
 {
     switch (type)
     {
-        case tok_left_parentheses: return 15;
-        case tok_right_parentheses: return 15;
+        case tok_open_paren: return 15;
+        case tok_close_paren: return 15;
 
         case tok_exponentiation: return 14;
 
-        case tok_multiplication: return 12;
-        case tok_division: return 12;
+        case tok_tilde: return 13;
+
+        case tok_star: return 12;
+        case tok_slash: return 12;
 
         case tok_plus: return 11;
         case tok_minus: return 11;
 
-        case tok_bitwise_and: return 9;
+        case tok_ampersand: return 9;
 
-        case tok_bitwise_xor: return 8;
+        case tok_caret: return 8;
 
-        case tok_bitwise_or: return 7;
+        case tok_pipe: return 7;
 
         case tok_gt: return 6;
         case tok_gte: return 6;
@@ -76,13 +97,13 @@ int token_is_binary_op(TokenType type)
     switch (type)
     {
         case tok_exponentiation:
-        case tok_multiplication:
-        case tok_division:
+        case tok_star:
+        case tok_slash:
         case tok_plus:
         case tok_minus:
-        case tok_bitwise_and:
-        case tok_bitwise_xor:
-        case tok_bitwise_or:
+        case tok_ampersand:
+        case tok_caret:
+        case tok_pipe:
         case tok_gt:
         case tok_gte:
         case tok_lt:
@@ -102,6 +123,7 @@ bool token_match(const std::vector<Token>& tokens, size_t& idx, TokenType type)
 {
     return (idx < tokens.size() && tokens[idx].type == type);
 }
+
 
 std::unique_ptr<Expr> parse_main(const std::vector<Token>& tokens, size_t& idx)
 {
@@ -151,13 +173,13 @@ std::unique_ptr<Expr> parse_main(const std::vector<Token>& tokens, size_t& idx)
     }
 
     // parentheses
-    if (token_match(tokens, idx, tok_left_parentheses))
+    if (token_match(tokens, idx, tok_open_paren))
     {
         idx++;
 
         std::unique_ptr<Expr> expr = parse_expr(tokens, idx);
 
-        if (!token_match(tokens, idx, tok_right_parentheses))
+        if (!token_match(tokens, idx, tok_close_paren))
         {
             std::cout << "Null is returning1\n";    
             return nullptr;
@@ -177,7 +199,7 @@ std::unique_ptr<Expr> parse_unary(const std::vector<Token>& tokens, size_t& idx)
 {
     // if valid unary op
     if (token_match(tokens, idx, tok_plus) || token_match(tokens, idx, tok_minus) || 
-    token_match(tokens, idx, tok_not) || token_match(tokens, idx, tok_bitwise_not))
+    token_match(tokens, idx, tok_not) || token_match(tokens, idx, tok_tilde))
     {
         TokenType type = tokens[idx++].type;
 
@@ -235,30 +257,32 @@ std::unique_ptr<Expr> parse_expr(const std::vector<Token>& tokens, size_t& idx)
     return parse_binary(0, std::move(lhs), tokens, idx);
 }
 
-std::unique_ptr<ASTNode> parse_node(const std::vector<Token>& tokens, size_t& idx)
+std::unique_ptr<ASTNode> parse_statement(const std::vector<Token>& tokens, size_t& idx)
 {
     if (idx >= tokens.size()) 
-    {
-        std::cout << "Null is returning3\n";
-        return nullptr;
-    }
+        throw std::runtime_error("Parsing index surpassed token size.");
 
     // skip redundant semi-colons
     if (token_match(tokens, idx, tok_delimiter))
-    {
         while (token_match(tokens, idx, tok_delimiter)) idx++;
-    }            
 
-    // statements
+    // skip comments
+    if (token_match(tokens, idx, tok_comment))
+        while (token_match(tokens, idx, tok_comment)) idx++;
+
+    // assignment
     if (token_match(tokens, idx, tok_identifier))
     {
         // lhs expr
-        std::unique_ptr<Expr> lhs(static_cast<Expr*>(parse_expr(tokens, idx).release()));
-        if (!lhs) return nullptr;
+        std::unique_ptr<Expr> lhs(parse_expr(tokens, idx));
 
         if (token_match(tokens, idx, tok_assignment))
         {
             idx++;
+
+            Variable* var = dynamic_cast<Variable*>(lhs.get());
+            if (var == nullptr)
+                throw std::runtime_error("Left side of assignment must be a variable.");
 
             // rhs expr
             std::unique_ptr<Expr> rhs(static_cast<Expr*>(parse_expr(tokens, idx).release()));
@@ -276,12 +300,102 @@ std::unique_ptr<ASTNode> parse_node(const std::vector<Token>& tokens, size_t& id
         }
     }
 
-    if (token_match(tokens, idx, tok_comment))
+    // if
+    if (token_match(tokens, idx, tok_if))
     {
         idx++;
+
+        if (!token_match(tokens, idx, tok_open_paren))
+            throw std::runtime_error("Expected '(' after 'if'");
+        idx++;
+
+        // condition expr
+        std::unique_ptr<Expr> cond(static_cast<Expr*>(parse_expr(tokens, idx).release()));
+        if (!cond) return nullptr;
+
+        if (!token_match(tokens, idx, tok_close_paren))
+            throw std::runtime_error("Expected ')' after 'if' condition");
+        idx++;
+
+        if (!token_match(tokens, idx, tok_open_brace))
+            throw std::runtime_error("Expected '{' before 'if' body");
+        idx++;
+
+        // then statements
+        std::vector<std::unique_ptr<Statement>> then_branch;
+        while (!token_match(tokens, idx, tok_close_brace))
+        {
+            std::unique_ptr<Statement> statement(static_cast<Statement*>(parse_statement(tokens, idx).release()));
+            then_branch.push_back(std::move(statement));
+        }
+        
+        idx++;
+
+        // optional else
+        // else statements
+        std::vector<std::unique_ptr<Statement>> else_branch;
+        if (token_match(tokens, idx, tok_else))
+        {
+            idx++;
+
+            if (!token_match(tokens, idx, tok_open_brace))
+                throw std::runtime_error("Expected '{' before 'else' body");
+            idx++;
+
+            while (!token_match(tokens, idx, tok_close_brace))
+            {
+                std::unique_ptr<Statement> statement(static_cast<Statement*>(parse_statement(tokens, idx).release()));
+                else_branch.push_back(std::move(statement));
+            }
+
+            idx++;
+        }
+
+        return std::make_unique<IfStatement>(
+                    std::unique_ptr<Expr>(static_cast<Expr*>(cond.release())),
+                    std::move(then_branch),
+                    std::move(else_branch)
+                );
     }
 
-    return nullptr;
+    // while
+    if (token_match(tokens, idx, tok_while))
+    {
+        idx++;
+
+        if (!token_match(tokens, idx, tok_open_paren))
+            throw std::runtime_error("Expected '(' after 'while'");
+        idx++;
+
+        // condition expr
+        std::unique_ptr<Expr> cond(static_cast<Expr*>(parse_expr(tokens, idx).release()));
+        if (!cond) return nullptr;
+
+        if (!token_match(tokens, idx, tok_close_paren))
+            throw std::runtime_error("Expected ')' after 'while' condition");
+        idx++;
+
+        if (!token_match(tokens, idx, tok_open_brace))
+            throw std::runtime_error("Expected '{' before 'while' body");
+        idx++;
+
+        // body statements
+        std::vector<std::unique_ptr<Statement>> body;
+        while (!token_match(tokens, idx, tok_close_brace))
+        {
+            std::unique_ptr<Statement> statement(static_cast<Statement*>(parse_statement(tokens, idx).release()));
+            body.push_back(std::move(statement));
+        }
+        
+        idx++;
+
+        return std::make_unique<WhileStatement>(
+                    std::unique_ptr<Expr>(static_cast<Expr*>(cond.release())),
+                    std::move(body)
+                );
+    }
+
+    throw std::runtime_error("Unexpected expression or invalid statement.");
 }
 
 
@@ -292,7 +406,7 @@ std::vector<std::unique_ptr<ASTNode>> parse(const std::vector<Token>& tokens)
 
     while (idx < tokens.size())
     {
-        std::unique_ptr<ASTNode> node = parse_node(tokens, idx);
+        std::unique_ptr<ASTNode> node = parse_statement(tokens, idx);
 
         if (node == nullptr)
             continue;

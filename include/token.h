@@ -11,14 +11,14 @@ enum TokenType
 {
     // structure
     tok_invalid = -1,
-    tok_delimiter = 0,
 
+    tok_delimiter = 0,
     tok_comment,
 
-    tok_left_parentheses,
-    tok_right_parentheses,
-    tok_left_braces,
-    tok_right_braces,
+    tok_open_paren,
+    tok_close_paren,
+    tok_open_brace,
+    tok_close_brace,
 
     // literals
     tok_number,
@@ -34,14 +34,14 @@ enum TokenType
 
     tok_plus,
     tok_minus,
-    tok_multiplication,
-    tok_division,
+    tok_star,
+    tok_slash,
     tok_exponentiation,
 
-    tok_bitwise_xor,
-    tok_bitwise_not,
-    tok_bitwise_and,
-    tok_bitwise_or,
+    tok_caret,
+    tok_tilde,
+    tok_ampersand,
+    tok_pipe,
     tok_not,
     tok_and,
     tok_or,
@@ -73,7 +73,7 @@ public:
 
     friend std::ostream& operator<< (std::ostream& out, const Token& obj)
     {
-        out << "< " << token_type_to_string(obj.type) << " : " << to_escaped_string(obj.lexeme) << " >";
+        out << "\'" << to_escaped_string(obj.lexeme) << "\' -> " << token_type_to_string(obj.type);
         return out;
     }
 };

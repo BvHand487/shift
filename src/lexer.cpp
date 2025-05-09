@@ -39,6 +39,14 @@ bool has_even_number_of_quotations(const std::string& str)
     return single_quotation_count % 2 == 0;
 }
 
+bool has_even_number_of_brackets(const std::string& str)
+{
+    size_t left_bracket_count = static_cast<int>(std::count(str.begin(), str.end(), '{'));
+    size_t right_bracket_count = static_cast<int>(std::count(str.begin(), str.end(), '}'));
+
+    return left_bracket_count == right_bracket_count;
+}
+
 
 std::vector<Token> tokenize(const std::string& input)
 {
@@ -50,9 +58,10 @@ std::vector<Token> tokenize(const std::string& input)
 
     // run basic checks before tokenizing
     if (!has_even_number_of_quotations(input))
-    {
-        return tokens;
-    }
+        throw std::runtime_error("Strings must have matching closing quotation marks.");
+
+    if (!has_even_number_of_brackets(input))
+        throw std::runtime_error("Statement bodies must have matching closing brackets.");
 
 
     for (int idx = 0; idx < input.length(); idx++)
@@ -72,16 +81,16 @@ std::vector<Token> tokenize(const std::string& input)
                 token = Token(tok_delimiter, Position(0, idx), lexeme); break;
 
             case '(':
-                token = Token(tok_left_parentheses, Position(0, idx), lexeme); break;
+                token = Token(tok_open_paren, Position(0, idx), lexeme); break;
 
             case ')':
-                token = Token(tok_right_parentheses, Position(0, idx), lexeme); break;
+                token = Token(tok_close_paren, Position(0, idx), lexeme); break;
 
             case '{':
-                token = Token(tok_left_braces, Position(0, idx), lexeme); break;
+                token = Token(tok_open_brace, Position(0, idx), lexeme); break;
 
             case '}':
-                token = Token(tok_right_braces, Position(0, idx), lexeme); break;
+                token = Token(tok_close_brace, Position(0, idx), lexeme); break;
 
             case '=':
                 idx++;
@@ -127,7 +136,7 @@ std::vector<Token> tokenize(const std::string& input)
                     break;
                 }
 
-                token = Token(tok_multiplication, Position(0, idx), lexeme);
+                token = Token(tok_star, Position(0, idx), lexeme);
                 idx--;
                 break;
 
@@ -148,7 +157,7 @@ std::vector<Token> tokenize(const std::string& input)
                     break;
                 }
 
-                token = Token(tok_division, Position(0, idx), lexeme);
+                token = Token(tok_slash, Position(0, idx), lexeme);
                 idx--;
                 break;
 
@@ -163,7 +172,7 @@ std::vector<Token> tokenize(const std::string& input)
                     break;
                 }
 
-                token = Token(tok_bitwise_and, Position(0, idx), lexeme);
+                token = Token(tok_ampersand, Position(0, idx), lexeme);
                 idx--;
                 break;
 
@@ -178,7 +187,7 @@ std::vector<Token> tokenize(const std::string& input)
                     break;
                 }
 
-                token = Token(tok_bitwise_or, Position(0, idx), lexeme);
+                token = Token(tok_pipe, Position(0, idx), lexeme);
                 idx--;
                 break;
 
@@ -198,10 +207,10 @@ std::vector<Token> tokenize(const std::string& input)
                 break;
 
             case '~':
-                token = Token(tok_bitwise_not, Position(0, idx), lexeme); break;
+                token = Token(tok_tilde, Position(0, idx), lexeme); break;
 
             case '^':
-                token = Token(tok_bitwise_xor, Position(0, idx), lexeme); break;
+                token = Token(tok_caret, Position(0, idx), lexeme); break;
 
             case '<':
                 idx++;

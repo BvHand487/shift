@@ -18,3 +18,9 @@ std::string to_escaped_string(const std::string& str)
 
     return out;
 }
+
+
+std::string create_indent(size_t indent_level, size_t indent_size)
+{
+    return std::string(indent_level * indent_size, ' ');
+}
