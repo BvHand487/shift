@@ -4,12 +4,14 @@
 #include <iostream>
 #include <string>
 
+#include "llvm/IR/Function.h"
+#include "llvm/IR/BasicBlock.h"
+
 #include "compiler.h"
 #include "lexer.h"
 #include "parser.h"
 
-
-std::string read_file(const std::string& path)
+std::string read_file(const std::string &path)
 {
     std::ifstream file(path, std::ios::binary);
 
@@ -26,7 +28,8 @@ std::string read_file(const std::string& path)
     return buffer;
 }
 
-int compile(const std::string& path)
+
+int compile(const std::string &path)
 {
     std::string contents = std::move(read_file(path));
 
@@ -37,8 +40,23 @@ int compile(const std::string& path)
     std::cout << "\n";
 
     auto ast = parse(tokens);
-    for (const auto& a : ast)
+    for (const auto &a : ast)
         std::cout << *a << std::endl;
+
+    // create synthetic main function
+    llvm::FunctionType* mainFuncType = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context), false);
+    
+    llvm::Function* mainFunc = llvm::Function::Create(mainFuncType, llvm::Function::ExternalLinkage, "main", *module);
+
+    llvm::BasicBlock *entry = llvm::BasicBlock::Create(*context, "entry", mainFunc);
+    builder->SetInsertPoint(entry);
+
+    for (const auto &statement : ast)
+    {
+        statement->codegen();
+    }
+
+    builder->CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
 
     return 0;
 }

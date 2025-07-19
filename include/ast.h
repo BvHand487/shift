@@ -1,14 +1,20 @@
 #ifndef AST_H
 #define AST_H
 
-
 #include <string>
 #include <memory>
 #include <vector>
 #include <ostream>
 
+#include "llvm/IR/Module.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Value.h"
 
 #include "utils.h"
+
+extern std::unique_ptr<llvm::IRBuilder<>> builder;
+extern std::unique_ptr<llvm::LLVMContext> context;
+extern std::unique_ptr<llvm::Module> module;
 
 
 class ASTNode
@@ -16,15 +22,16 @@ class ASTNode
 public:
     virtual ~ASTNode() = default;
 
-    virtual std::ostream& print(std::ostream& out, size_t indent=0) const = 0;
+    virtual std::ostream& print(std::ostream&, size_t = 0) const = 0;
 
-    friend std::ostream& operator<< (std::ostream& out, const ASTNode& obj)
+    friend std::ostream& operator<<(std::ostream& out, const ASTNode& obj)
     {
         return obj.print(out);
     }
+
+    virtual llvm::Value *codegen() = 0;
+    
 };
-
-
 class Expr : public ASTNode
 {
 public:
@@ -36,16 +43,14 @@ class Variable : public Expr
 {
     std::string name;
 
-    std::ostream& print(std::ostream& out, size_t indent=0) const
-    {
-        out << create_indent(indent) << "Variable(" << this->name << ")";
-        return out;
-    }
+    std::ostream& print(std::ostream&, size_t) const;
 
 public:
     Variable(const std::string& name) : name(name) {}
-};
+    llvm::Value *codegen() override;
 
+    const std::string& getName() const { return name; }
+};
 
 // --- LITERALS  --- //
 template <class T>
@@ -58,41 +63,35 @@ public:
     explicit Literal(T value) : value(value) {}
 };
 
-class Number : public Literal<double> {
+class Number : public Literal<double>
+{
 private:
-    std::ostream& print(std::ostream& out, size_t indent=0) const
-    {
-        out << create_indent(indent) << "Number(" << this->value << ")";
-        return out;
-    }
+    std::ostream& print(std::ostream&, size_t) const;
 
 public:
     using Literal::Literal;
+    llvm::Value *codegen() override;
 };
 
-class Boolean : public Literal<bool> {
+class Boolean : public Literal<bool>
+{
 private:
-    std::ostream& print(std::ostream& out, size_t indent=0) const
-    {
-        out << create_indent(indent) << "Boolean(" << std::boolalpha << this->value << ")";
-        return out;
-    }
-public:
-    using Literal::Literal;
-};
-
-class String : public Literal<std::string> {
-private:
-    std::ostream& print(std::ostream& out, size_t indent=0) const
-    {
-        out << create_indent(indent) << "String(" << this->value << ")";
-        return out;
-    }
+    std::ostream& print(std::ostream&, size_t) const;
 
 public:
     using Literal::Literal;
+    llvm::Value *codegen() override;
 };
 
+class String : public Literal<std::string>
+{
+private:
+    std::ostream& print(std::ostream&, size_t) const;
+
+public:
+    using Literal::Literal;
+    llvm::Value *codegen() override;
+};
 
 // --- BINARY OPERATORS --- //
 enum class BinaryOps
@@ -100,16 +99,28 @@ enum class BinaryOps
     None = -1,
 
     // Arithmetic
-    Addition, Subtraction, Multiplication, Division, Exponentiation,
+    Addition,
+    Subtraction,
+    Multiplication,
+    Division,
+    Exponentiation,
 
     // Logical
-    And, Or,
+    And,
+    Or,
 
     // Bitwise
-    BitXor, BitAnd, BitOr,
+    BitXor,
+    BitAnd,
+    BitOr,
 
     // Comparison
-    Greater, GreaterEqual, Less, LessEqual, Equal, NotEqual
+    Greater,
+    GreaterEqual,
+    Less,
+    LessEqual,
+    Equal,
+    NotEqual
 };
 
 class BinaryOp : public Expr
@@ -117,48 +128,28 @@ class BinaryOp : public Expr
     BinaryOps op;
     std::unique_ptr<Expr> lhs, rhs;
 
-    std::ostream& print(std::ostream& out, size_t indent=0) const
-    {
-        switch(op)
-        {
-            case BinaryOps::Addition: out << create_indent(indent) << "Add(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::Subtraction: out << create_indent(indent) << "Sub(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::Multiplication: out << create_indent(indent) << "Mul(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::Division: out << create_indent(indent) << "Div(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::Exponentiation: out << create_indent(indent) << "Pow(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::And: out << create_indent(indent) << "And(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::Or: out << create_indent(indent) << "Or(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::BitXor: out << create_indent(indent) << "BitXor(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::BitAnd: out << create_indent(indent) << "BitAnd(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::BitOr: out << create_indent(indent) << "BitOr(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::Greater: out << create_indent(indent) << "GT(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::GreaterEqual: out << create_indent(indent) << "GTE(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::Less: out << create_indent(indent) << "LT(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::LessEqual: out << create_indent(indent) << "LTE(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::Equal: out << create_indent(indent) << "EQ(" << *lhs << ", " << *rhs << ")"; break;
-            case BinaryOps::NotEqual: out << create_indent(indent) << "NEQ(" << *lhs << ", " << *rhs << ")"; break;
-        }
-
-        return out;
-    }
+    std::ostream& print(std::ostream&, size_t) const;
 
 public:
     BinaryOp(
         BinaryOps op,
         std::unique_ptr<Expr> lhs,
-        std::unique_ptr<Expr> rhs
-    ) : 
-        op(op),
+        std::unique_ptr<Expr> rhs) : op(op),
         lhs(std::move(lhs)),
-        rhs(std::move(rhs)) {}
-};
+        rhs(std::move(rhs)) {
+    }
 
+    llvm::Value *codegen() override;
+};
 
 // --- UNARY OPERATORS --- //
 enum class UnaryOps
 {
     None = -1,
-    Addition, Subtraction, Not, BitwiseNot
+    Addition,
+    Subtraction,
+    Not,
+    BitwiseNot
 };
 
 class UnaryOp : public Expr
@@ -166,35 +157,23 @@ class UnaryOp : public Expr
     UnaryOps op;
     std::unique_ptr<Expr> rhs;
 
-    std::ostream& print(std::ostream& out, size_t indent=0) const
-    {
-        switch(op)
-        {
-            case UnaryOps::Addition: out << create_indent(indent) << "Plus(" << *rhs << ")"; break;
-            case UnaryOps::Subtraction: out << create_indent(indent) << "Minus(" << *rhs << ")"; break;
-            case UnaryOps::Not: out << create_indent(indent) << "Not(" << *rhs << ")"; break;
-            case UnaryOps::BitwiseNot: out << create_indent(indent) << "BitNot(" << *rhs << ")"; break;
-        }
-
-        return out;
-    }
+    std::ostream& print(std::ostream&, size_t) const;
 
 public:
     UnaryOp(
         UnaryOps op,
-        std::unique_ptr<Expr> rhs
-    ) :
-        op(op), rhs(std::move(rhs)) {}
+        std::unique_ptr<Expr> rhs) : op(op), rhs(std::move(rhs)) {
+    }
+
+    llvm::Value *codegen() override;
 };
-
-
 
 class Statement : public ASTNode
 {
 public:
     virtual ~Statement() = default;
+    virtual llvm::Value *codegen() = 0;
 };
-
 
 // --- ASSIGNMENT --- //
 class Assignment : public Statement
@@ -202,81 +181,51 @@ class Assignment : public Statement
     std::unique_ptr<Variable> lhs;
     std::unique_ptr<Expr> rhs;
 
-    std::ostream& print(std::ostream& out, size_t indent=0) const
-    {
-        out << create_indent(indent) << "Assignment(" << *lhs << ", " << *rhs << ")" << std::endl;
-        return out;
-    }
+    std::ostream& print(std::ostream&, size_t) const;
 
 public:
     Assignment(
         std::unique_ptr<Variable> lhs,
-        std::unique_ptr<Expr> rhs
-    ) : 
-        lhs(std::move(lhs)), rhs(std::move(rhs)) {}
-};
+        std::unique_ptr<Expr> rhs) : lhs(std::move(lhs)), rhs(std::move(rhs)) {
+    }
 
+    llvm::Value *codegen() override;
+};
 
 class IfStatement : public Statement
 {
     std::unique_ptr<Expr> cond;
     std::vector<std::unique_ptr<Statement>> then_branch, else_branch;
 
-    std::ostream& print(std::ostream& out, size_t indent=0) const
-    {
-        out << create_indent(indent) << "If(" << *cond << ")" << std::endl;
-
-        for (auto& s : then_branch)
-            s->print(out, indent + 1); 
-
-        if (else_branch.size() >  0)
-        {
-            out << create_indent(indent) << "Else" << std::endl;
-            
-            for (auto& s : else_branch)
-                s->print(out, indent + 1); 
-        }
-
-        return out;
-    }
+    std::ostream& print(std::ostream&, size_t) const;
 
 public:
     IfStatement(
         std::unique_ptr<Expr> cond,
         std::vector<std::unique_ptr<Statement>> then_branch,
-        std::vector<std::unique_ptr<Statement>> else_branch
-    ) :
-        cond(std::move(cond)),
+        std::vector<std::unique_ptr<Statement>> else_branch) : cond(std::move(cond)),
         then_branch(std::move(then_branch)),
-        else_branch(std::move(else_branch)) {}
+        else_branch(std::move(else_branch)) {
+    }
 
+    llvm::Value *codegen() override;
 };
-
 
 class WhileStatement : public Statement
 {
     std::unique_ptr<Expr> cond;
     std::vector<std::unique_ptr<Statement>> body;
 
-    std::ostream& print(std::ostream& out, size_t indent=0) const
-    {
-        out << create_indent(indent) << "While(" << *cond << ")" << std::endl;
-
-        for (auto& s : body)
-            s->print(out, indent + 1); 
-
-        return out;
-    }
+    std::ostream& print(std::ostream&, size_t) const;
 
 public:
-WhileStatement(
+    WhileStatement(
         std::unique_ptr<Expr> cond,
-        std::vector<std::unique_ptr<Statement>> body
-    ) :
-        cond(std::move(cond)),
-        body(std::move(body)) {}
+        std::vector<std::unique_ptr<Statement>> body) : cond(std::move(cond)),
+        body(std::move(body)) {
+    }
 
+    llvm::Value *codegen() override;
 };
-
 
 #endif
