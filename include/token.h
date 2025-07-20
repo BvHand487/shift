@@ -5,6 +5,7 @@
 #include <ostream>
 #include <unordered_map>
 
+#include "operators.h"
 #include "position.h"
 #include "utils.h"
 
@@ -61,7 +62,8 @@ enum TokenType
     tok_return,
     tok_if,
     tok_else,
-    tok_while
+    tok_while,
+    tok_extern
 };
 
 #define TOKEN_TO_STR_MAPPINGS \
@@ -102,7 +104,8 @@ enum TokenType
     ROW(tok_return, "tok_return") \
     ROW(tok_if, "tok_if") \
     ROW(tok_else, "tok_else") \
-    ROW(tok_while, "tok_while")
+    ROW(tok_while, "tok_while") \
+    ROW(tok_extern, "tok_extern")
 
 #define KEYWORD_MAPPINGS \
     ROW(tok_true, "true") \
@@ -114,7 +117,33 @@ enum TokenType
     ROW(tok_return, "return") \
     ROW(tok_if, "if") \
     ROW(tok_else, "else") \
-    ROW(tok_while, "while")
+    ROW(tok_while, "while") \
+    ROW(tok_extern, "extern")
+
+#define BINARY_OPERATOR_MAPPINGS \
+    ROW(tok_plus, binop_add) \
+    ROW(tok_minus, binop_sub) \
+    ROW(tok_star, binop_mul) \
+    ROW(tok_slash, binop_div) \
+    ROW(tok_exponentiation, binop_exp) \
+    ROW(tok_and, binop_and) \
+    ROW(tok_or, binop_or) \
+    ROW(tok_caret, binop_bit_xor) \
+    ROW(tok_ampersand, binop_bit_and) \
+    ROW(tok_pipe, binop_bit_or) \
+    ROW(tok_gt, binop_gt) \
+    ROW(tok_gte, binop_gte) \
+    ROW(tok_lt, binop_lt) \
+    ROW(tok_lte, binop_gte) \
+    ROW(tok_eq, binop_eq) \
+    ROW(tok_neq, binop_neq)
+
+#define UNARY_OPERATOR_MAPPINGS \
+    ROW(tok_plus, unary_add) \
+    ROW(tok_minus, unary_sub) \
+    ROW(tok_not, unary_not) \
+    ROW(tok_tilde, unary_bit_not)
+
 
 #define ROW(tok, str) { tok, str },
 const std::unordered_map<TokenType, std::string> token_to_str = {
@@ -131,6 +160,18 @@ const std::unordered_map<std::string, TokenType> str_to_token = {
 #define ROW(tok, str) { str, tok },
 const std::unordered_map<std::string, TokenType> keyword_to_token = {
     KEYWORD_MAPPINGS
+};
+#undef ROW
+
+#define ROW(tok, op) { tok, op },
+const std::unordered_map<TokenType, BinaryOpType> token_to_binary_op = {
+    BINARY_OPERATOR_MAPPINGS
+};
+#undef ROW
+
+#define ROW(tok, op) { tok, op },
+const std::unordered_map<TokenType, UnaryOpType> token_to_unary_op = {
+    UNARY_OPERATOR_MAPPINGS
 };
 #undef ROW
 
@@ -151,5 +192,9 @@ public:
         return out;
     }
 };
+
+
+int token_op_to_precedence(TokenType type);
+
 
 #endif

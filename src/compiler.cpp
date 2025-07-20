@@ -39,11 +39,12 @@ int compile(const std::string &path)
 
     std::cout << "\n";
 
-    auto ast = parse(tokens);
+    auto parser = Parser(tokens);
+    auto ast = parser.parse();
+
     for (const auto &a : ast)
         std::cout << *a << std::endl;
 
-    // create synthetic main function
     for (const auto &statement : ast)
         statement->codegen();
 
