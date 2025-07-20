@@ -44,19 +44,8 @@ int compile(const std::string &path)
         std::cout << *a << std::endl;
 
     // create synthetic main function
-    llvm::FunctionType* mainFuncType = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context), false);
-    
-    llvm::Function* mainFunc = llvm::Function::Create(mainFuncType, llvm::Function::ExternalLinkage, "main", *module);
-
-    llvm::BasicBlock *entry = llvm::BasicBlock::Create(*context, "entry", mainFunc);
-    builder->SetInsertPoint(entry);
-
     for (const auto &statement : ast)
-    {
         statement->codegen();
-    }
-
-    builder->CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
 
     return 0;
 }

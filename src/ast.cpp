@@ -2,12 +2,12 @@
 #include <map>
 
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/ADT/APFloat.h"
 
 #include "ast.h"
 
 using llvm::BasicBlock;
-using llvm::Function;
 using llvm::IRBuilder;
 using llvm::LLVMContext;
 using llvm::Module;
@@ -18,10 +18,19 @@ extern std::unique_ptr<IRBuilder<>> builder;
 
 static std::map<std::string, llvm::AllocaInst *> namedValues;
 
+extern std::unique_ptr<llvm::FunctionPassManager> theFPM;
+extern std::unique_ptr<llvm::LoopAnalysisManager> theLAM;
+extern std::unique_ptr<llvm::FunctionAnalysisManager> theFAM;
+extern std::unique_ptr<llvm::CGSCCAnalysisManager> theCGAM;
+extern std::unique_ptr<llvm::ModuleAnalysisManager> theMAM;
+extern std::unique_ptr<llvm::PassInstrumentationCallbacks> thePIC;
+extern std::unique_ptr<llvm::StandardInstrumentations> theSI;
+
+
 std::ostream &Variable::print(std::ostream &out, size_t indent = 0) const
 {
-    out << create_indent(indent) << "Variable(" << this->name << ")";
-    return out;
+    return out << create_indent(indent) << "Variable(" << this->name << ")";
+    ;
 }
 
 llvm::Value *Variable::codegen()
@@ -36,8 +45,7 @@ llvm::Value *Variable::codegen()
 
 std::ostream &Number::print(std::ostream &out, size_t indent = 0) const
 {
-    out << create_indent(indent) << "Number(" << this->value << ")";
-    return out;
+    return out << create_indent(indent) << "Number(" << this->value << ")";
 }
 
 llvm::Value *Number::codegen()
@@ -47,8 +55,7 @@ llvm::Value *Number::codegen()
 
 std::ostream &Boolean::print(std::ostream &out, size_t indent = 0) const
 {
-    out << create_indent(indent) << "Boolean(" << std::boolalpha << this->value << ")";
-    return out;
+    return out << create_indent(indent) << "Boolean(" << std::boolalpha << this->value << ")";
 }
 
 llvm::Value *Boolean::codegen()
@@ -58,8 +65,7 @@ llvm::Value *Boolean::codegen()
 
 std::ostream &String::print(std::ostream &out, size_t indent = 0) const
 {
-    out << create_indent(indent) << "String(" << this->value << ")";
-    return out;
+    return out << create_indent(indent) << "String(" << this->value << ")";
 }
 
 llvm::Value *String::codegen()
@@ -217,8 +223,7 @@ llvm::Value *UnaryOp::codegen()
 
 std::ostream &Assignment::print(std::ostream &out, size_t indent = 0) const
 {
-    out << create_indent(indent) << "Assignment(" << *lhs << ", " << *rhs << ")" << std::endl;
-    return out;
+    return out << create_indent(indent) << "Assignment(" << *lhs << ", " << *rhs << ")" << std::endl;
 }
 
 llvm::Value *Assignment::codegen()
@@ -233,13 +238,147 @@ llvm::Value *Assignment::codegen()
     // if the variable doesnt exist yet - declare it.
     if (!var)
     {
-        llvm::AllocaInst* alloca = builder->CreateAlloca(llvm::Type::getDoubleTy(*context), nullptr, this->lhs->getName());
+        llvm::Function *function = builder->GetInsertBlock()->getParent();
+        llvm::AllocaInst *alloca = builder->CreateAlloca(llvm::Type::getDoubleTy(*context), nullptr, this->lhs->getName());
         var = namedValues[this->lhs->getName()] = alloca;
     }
 
     builder->CreateStore(r, var);
 
     return r;
+}
+
+std::ostream &Function::print(std::ostream &out, size_t indent = 0) const
+{
+    out << create_indent(indent) << "fn " << this->name << "(";
+    if (!this->args.empty())
+        out << std::endl;
+    
+    for (auto &arg : this->args)
+        arg->print(out, indent + 1) << '\n';
+
+    out << create_indent(indent) << ")" << std::endl;
+
+    for (auto &stmnt : this->body)
+        stmnt->print(out, indent + 1);
+
+    return out;
+}
+
+llvm::Value *Function::codegen()
+{
+    llvm::Type* type;
+    std::vector<llvm::Type *> params;
+    if (this->name == "main")
+    {
+        type = llvm::Type::getInt32Ty(*context);
+    }
+    else
+    {
+        type = llvm::Type::getDoubleTy(*context);
+        params.insert(params.end(), this->args.size(), type);
+    }
+    
+    llvm::FunctionType *functionType = llvm::FunctionType::get(type, params, false);
+    llvm::Function *function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, this->name, *module);
+    
+    size_t idx = 0;
+    for (auto &arg : function->args())
+        arg.setName(this->args[idx++]->getName());
+
+    BasicBlock *block = BasicBlock::Create(*context, "entry", function);
+    builder->SetInsertPoint(block);
+
+    namedValues.clear();
+    for (auto &arg : function->args())
+    {
+        llvm::AllocaInst *alloca = builder->CreateAlloca(llvm::Type::getDoubleTy(*context), nullptr, arg.getName());
+
+        builder->CreateStore(&arg, alloca);
+
+        namedValues[std::string(arg.getName())] = alloca;
+    }
+
+    llvm::Value *retVal = nullptr;
+    for (auto &statement : this->body)
+        retVal = statement->codegen();
+
+    if (!llvm::verifyFunction(*function))
+    {
+        theFPM->run(*function, *theFAM);
+        return function;
+    }
+
+    return nullptr;    
+}
+
+std::ostream &Return::print(std::ostream &out, size_t indent = 0) const
+{
+    return out << create_indent(indent) << "Return(" << *this->value << ")";
+}
+
+llvm::Value *Return::codegen()
+{
+    if (this->value == nullptr) {
+        return builder->CreateRetVoid();
+    }
+
+    llvm::Value* retVal = this->value->codegen();
+    if (!retVal)
+        return nullptr;
+
+    if (builder->GetInsertBlock()->getParent()->getName() == "main")
+    {
+        if (retVal->getType()->isDoubleTy())
+        {
+            retVal = builder->CreateFPToSI(retVal, llvm::Type::getInt32Ty(*context), "retcast");
+        }
+        // is bool
+        else if (retVal->getType()->isIntegerTy(1))
+        {
+            retVal = builder->CreateZExt(retVal, llvm::Type::getInt32Ty(*context), "zextbool");
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
+    return builder->CreateRet(retVal);
+}
+
+std::ostream &Call::print(std::ostream &out, size_t indent = 0) const
+{
+    out << create_indent(indent) << this->callee << "(";
+    if (!this->args.empty())
+        out << std::endl;
+
+    for (auto &arg : this->args)
+        arg->print(out, indent + 1) << '\n';
+
+    return out << create_indent(indent) << ")" << std::endl;
+}
+
+llvm::Value *Call::codegen()
+{
+    llvm::Function *callee = module->getFunction(this->callee);
+
+    if (!callee)
+        return nullptr;
+
+    if (callee->arg_size() != this->args.size())
+        return nullptr;
+
+    std::vector<llvm::Value*> argValues;
+    for (int i = 0; i < this->args.size(); ++i)
+    {
+        argValues.push_back(this->args[i]->codegen());
+
+        if (!argValues.back())
+            return nullptr;
+    }
+
+    return builder->CreateCall(callee, argValues, "calltmp");
 }
 
 std::ostream &IfStatement::print(std::ostream &out, size_t indent = 0) const
@@ -267,9 +406,7 @@ llvm::Value *IfStatement::codegen()
     if (!cond)
         return nullptr;
 
-    cond = builder->CreateFCmpONE(cond, llvm::ConstantFP::get(*context, llvm::APFloat(0.0)), "condtmp");
-
-    Function *func = builder->GetInsertBlock()->getParent();
+    llvm::Function *func = builder->GetInsertBlock()->getParent();
 
     BasicBlock *thenBB = BasicBlock::Create(*context, "then", func);
     BasicBlock *elseBB = BasicBlock::Create(*context, "else");

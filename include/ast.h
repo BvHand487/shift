@@ -9,12 +9,22 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Value.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Passes/StandardInstrumentations.h"
 
 #include "utils.h"
 
 extern std::unique_ptr<llvm::IRBuilder<>> builder;
 extern std::unique_ptr<llvm::LLVMContext> context;
 extern std::unique_ptr<llvm::Module> module;
+
+extern std::unique_ptr<llvm::FunctionPassManager> theFPM;
+extern std::unique_ptr<llvm::LoopAnalysisManager> theLAM;
+extern std::unique_ptr<llvm::FunctionAnalysisManager> theFAM;
+extern std::unique_ptr<llvm::CGSCCAnalysisManager> theCGAM;
+extern std::unique_ptr<llvm::ModuleAnalysisManager> theMAM;
+extern std::unique_ptr<llvm::PassInstrumentationCallbacks> thePIC;
+extern std::unique_ptr<llvm::StandardInstrumentations> theSI;
 
 
 class ASTNode
@@ -43,12 +53,11 @@ class Variable : public Expr
 {
     std::string name;
 
-    std::ostream& print(std::ostream&, size_t) const;
-
 public:
     Variable(const std::string& name) : name(name) {}
     llvm::Value *codegen() override;
 
+    std::ostream& print(std::ostream&, size_t) const;
     const std::string& getName() const { return name; }
 };
 
@@ -191,6 +200,54 @@ public:
 
     llvm::Value *codegen() override;
 };
+
+// --- FUNCTIONS --- //
+class Function : public Statement
+{
+    std::string name;
+    std::vector<std::unique_ptr<Variable>> args;
+    std::vector<std::unique_ptr<Statement>> body;
+
+    std::ostream& print(std::ostream&, size_t) const;
+
+public:
+    Function(
+        const std::string& name,
+        std::vector<std::unique_ptr<Variable>> args,
+        std::vector<std::unique_ptr<Statement>> body) : name(name), args(std::move(args)), body(std::move(body)) {
+    }
+
+    llvm::Value *codegen() override;
+};
+
+class Return : public Statement
+{
+    std::unique_ptr<Expr> value;
+
+    std::ostream& print(std::ostream&, size_t) const;
+
+public:
+    Return(std::unique_ptr<Expr> value) : value(std::move(value)) { }
+
+    llvm::Value *codegen() override;
+};
+
+class Call : public Expr
+{
+    std::string callee;
+    std::vector<std::unique_ptr<Expr>> args;
+
+    std::ostream& print(std::ostream&, size_t) const;
+
+public:
+    Call(
+        const std::string& callee,
+        std::vector<std::unique_ptr<Expr>> args) : callee(callee), args(std::move(args)) {
+    }
+
+    llvm::Value *codegen() override;
+};
+
 
 class IfStatement : public Statement
 {

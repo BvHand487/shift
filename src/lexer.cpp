@@ -80,6 +80,9 @@ std::vector<Token> tokenize(const std::string& input)
             case ';':
                 token = Token(tok_delimiter, Position(0, idx), lexeme); break;
 
+            case ',':
+                token = Token(tok_comma, Position(0, idx), lexeme); break;
+
             case '(':
                 token = Token(tok_open_paren, Position(0, idx), lexeme); break;
 
@@ -256,30 +259,14 @@ std::vector<Token> tokenize(const std::string& input)
                         character = input[idx];
                     }
 
-                    // bool literal
-                    if (lexeme == "true" || lexeme == "false")
-                        token = Token(tok_boolean, Position(0, idx), lexeme);
-                    // if keyword
-                    else if (lexeme == "if")
-                        token = Token(tok_if, Position(0, idx), lexeme);
-                    // else keyword
-                    else if (lexeme == "else")
-                        token = Token(tok_else, Position(0, idx), lexeme);
-                    // while keyword
-                    else if (lexeme == "while")
-                        token = Token(tok_while, Position(0, idx), lexeme);
-                    // and
-                    else if (lexeme == "and")
-                        token = Token(tok_and, Position(0, idx), lexeme);
-                    // or
-                    else if (lexeme == "or")
-                        token = Token(tok_or, Position(0, idx), lexeme);
-                    // not
-                    else if (lexeme == "not")
-                        token = Token(tok_not, Position(0, idx), lexeme);
-                    // identifier
+                    if (keyword_to_token.find(lexeme) != keyword_to_token.end())
+                    {
+                        token = Token(keyword_to_token.at(lexeme), Position(0, idx), lexeme);
+                    }
                     else
+                    {
                         token = Token(tok_identifier, Position(0, idx), lexeme);
+                    }
 
                     idx--;
                 }

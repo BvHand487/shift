@@ -3,6 +3,7 @@
 
 #include <string>
 #include <ostream>
+#include <unordered_map>
 
 #include "position.h"
 #include "utils.h"
@@ -13,6 +14,7 @@ enum TokenType
     tok_invalid = -1,
 
     tok_delimiter = 0,
+    tok_comma,
     tok_comment,
 
     tok_open_paren,
@@ -23,7 +25,8 @@ enum TokenType
     // literals
     tok_number,
     tok_string,
-    tok_boolean,
+    tok_true,
+    tok_false,
 
     // primary
     tok_identifier,
@@ -54,12 +57,83 @@ enum TokenType
     tok_neq,
 
     // keywords
+    tok_fn,
+    tok_return,
     tok_if,
     tok_else,
-    tok_while,
+    tok_while
 };
 
-std::string token_type_to_string(TokenType type);
+#define TOKEN_TO_STR_MAPPINGS \
+    ROW(tok_invalid, "tok_invalid") \
+    ROW(tok_delimiter, "tok_delimiter") \
+    ROW(tok_comma, "tok_comma") \
+    ROW(tok_comment, "tok_comment") \
+    ROW(tok_open_paren, "tok_open_paren") \
+    ROW(tok_close_paren, "tok_close_paren") \
+    ROW(tok_open_brace, "tok_open_brace") \
+    ROW(tok_close_brace, "tok_close_brace") \
+    ROW(tok_number, "tok_number") \
+    ROW(tok_string, "tok_string") \
+    ROW(tok_true, "tok_true") \
+    ROW(tok_false, "tok_false") \
+    ROW(tok_identifier, "tok_identifier") \
+    ROW(tok_assignment, "tok_assignment") \
+    ROW(tok_relationship, "tok_relationship") \
+    ROW(tok_plus, "tok_plus") \
+    ROW(tok_minus, "tok_minus") \
+    ROW(tok_star, "tok_star") \
+    ROW(tok_slash, "tok_slash") \
+    ROW(tok_exponentiation, "tok_exponentiation") \
+    ROW(tok_caret, "tok_caret") \
+    ROW(tok_tilde, "tok_tilde") \
+    ROW(tok_ampersand, "tok_ampersand") \
+    ROW(tok_pipe, "tok_pipe") \
+    ROW(tok_not, "tok_not") \
+    ROW(tok_and, "tok_and") \
+    ROW(tok_or, "tok_or") \
+    ROW(tok_gt, "tok_gt") \
+    ROW(tok_gte, "tok_gte") \
+    ROW(tok_lt, "tok_lt") \
+    ROW(tok_lte, "tok_lte") \
+    ROW(tok_eq, "tok_eq") \
+    ROW(tok_neq, "tok_neq") \
+    ROW(tok_fn, "tok_fn") \
+    ROW(tok_return, "tok_return") \
+    ROW(tok_if, "tok_if") \
+    ROW(tok_else, "tok_else") \
+    ROW(tok_while, "tok_while")
+
+#define KEYWORD_MAPPINGS \
+    ROW(tok_true, "true") \
+    ROW(tok_false, "false") \
+    ROW(tok_not, "not") \
+    ROW(tok_and, "and") \
+    ROW(tok_or, "or") \
+    ROW(tok_fn, "fn") \
+    ROW(tok_return, "return") \
+    ROW(tok_if, "if") \
+    ROW(tok_else, "else") \
+    ROW(tok_while, "while")
+
+#define ROW(tok, str) { tok, str },
+const std::unordered_map<TokenType, std::string> token_to_str = {
+    TOKEN_TO_STR_MAPPINGS
+};
+#undef ROW
+
+#define ROW(tok, str) { str, tok },
+const std::unordered_map<std::string, TokenType> str_to_token = {
+    TOKEN_TO_STR_MAPPINGS
+};
+#undef ROW
+
+#define ROW(tok, str) { str, tok },
+const std::unordered_map<std::string, TokenType> keyword_to_token = {
+    KEYWORD_MAPPINGS
+};
+#undef ROW
+
 
 struct Token
 {
@@ -73,7 +147,7 @@ public:
 
     friend std::ostream& operator<< (std::ostream& out, const Token& obj)
     {
-        out << "\'" << to_escaped_string(obj.lexeme) << "\' -> " << token_type_to_string(obj.type);
+        out << "\'" << to_escaped_string(obj.lexeme) << "\' -> " << token_to_str.at(obj.type);
         return out;
     }
 };
