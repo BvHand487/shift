@@ -8,7 +8,8 @@ bool Parser::valid_index() const { return idx >= 0 && idx < tokens.size(); }
 const Token &Parser::peek() const { return this->tokens[idx]; }
 const Token &Parser::prev() const { return this->tokens[idx - 1]; }
 const Token &Parser::next() const { return this->tokens[idx + 1]; }
-const Token &Parser::advance() {
+const Token &Parser::advance()
+{
     if (valid_index())
         idx++;
 
@@ -16,7 +17,8 @@ const Token &Parser::advance() {
 }
 
 bool Parser::check(TokenType type) const { return valid_index() && peek().type == type; }
-bool Parser::match(TokenType type) {
+bool Parser::match(TokenType type)
+{
     if (check(type))
     {
         advance();
@@ -25,7 +27,8 @@ bool Parser::match(TokenType type) {
 
     return false;
 }
-const Token &Parser::consume(TokenType expected, const std::string &error) {
+const Token &Parser::consume(TokenType expected, const std::string &error)
+{
     if (check(expected))
         return advance();
 
@@ -34,7 +37,6 @@ const Token &Parser::consume(TokenType expected, const std::string &error) {
 
     throw std::runtime_error(message);
 }
-
 
 std::unique_ptr<Declaration> Parser::parse_declaration()
 {
@@ -73,8 +75,7 @@ std::unique_ptr<Prototype> Parser::parse_prototype()
         {
             auto arg = parse_variable();
             args.push_back(std::move(arg));
-        }
-        while (match(tok_comma));
+        } while (match(tok_comma));
     }
 
     consume(tok_close_paren, "Expected ')' after parameters");
@@ -125,7 +126,7 @@ std::unique_ptr<Assignment> Parser::parse_assignment()
     consume(tok_assignment, "Expected '=' after assignment identifier");
 
     std::unique_ptr<Expr> expr = parse_expression();
-    
+
     consume(tok_delimiter, "Expected ';' after assignment");
 
     return std::make_unique<Assignment>(std::move(var), std::move(expr));
@@ -144,13 +145,15 @@ std::unique_ptr<If> Parser::parse_if_stmt()
     std::unique_ptr<Expr> condition;
     std::unique_ptr<Block> then_block;
     std::unique_ptr<Block> else_block = nullptr;
-    
+
     consume(tok_open_paren, "Expected '(' before 'if' condition");
     condition = parse_expression();
     consume(tok_close_paren, "Expected ')' after 'if' condition");
 
-    consume(tok_open_brace, "Expected '{' before 'if' body");
-    then_block = parse_block();
+    if (check(tok_open_brace))
+        then_block = parse_block();
+    else
+        throw std::runtime_error("Expected '{' before 'if' body");
 
     if (match(tok_else))
     {
@@ -161,15 +164,14 @@ std::unique_ptr<If> Parser::parse_if_stmt()
     return std::make_unique<If>(
         std::move(condition),
         std::move(then_block),
-        std::move(else_block)
-    );
+        std::move(else_block));
 }
 
 std::unique_ptr<While> Parser::parse_while_stmt()
 {
     std::unique_ptr<Expr> condition;
     std::unique_ptr<Block> body;
-    
+
     consume(tok_open_paren, "Expected '(' before 'while' condition");
     condition = parse_expression();
     consume(tok_close_paren, "Expected ')' after 'while' condition");
@@ -179,10 +181,8 @@ std::unique_ptr<While> Parser::parse_while_stmt()
 
     return std::make_unique<While>(
         std::move(condition),
-        std::move(body)
-    );
+        std::move(body));
 }
-
 
 std::unique_ptr<Expr> Parser::parse_expression(int precedence)
 {
@@ -191,9 +191,10 @@ std::unique_ptr<Expr> Parser::parse_expression(int precedence)
     while (valid_index())
     {
         int current_prec = token_op_to_precedence(peek().type);
-        if (current_prec < precedence) break;
+        if (current_prec < precedence)
+            break;
 
-        const Token& op = advance();
+        const Token &op = advance();
         auto rhs = parse_expression(current_prec + 1);
         lhs = std::make_unique<BinaryOp>(token_to_binary_op.at(op.type), std::move(lhs), std::move(rhs));
     }
@@ -214,18 +215,19 @@ std::unique_ptr<Expr> Parser::parse_primary()
 
     if (match(tok_false))
         return std::make_unique<Boolean>(false);
-    
+
     if (check(tok_identifier))
     {
         // function call expr
         if (next().type == tok_open_paren)
             return parse_call_expr();
-        
+
         // variable expr
         return parse_variable();
     }
 
-    if (match(tok_open_paren)) {
+    if (match(tok_open_paren))
+    {
         auto expr = parse_expression();
         consume(tok_close_paren, "Expected ')' after expression");
         return expr;
@@ -255,7 +257,7 @@ std::unique_ptr<CallExpr> Parser::parse_call_expr()
 {
     consume(tok_identifier, "Expected identifier");
     std::string name = prev().lexeme;
-    
+
     consume(tok_open_paren, "Expected '(' before function call args");
 
     std::vector<std::unique_ptr<Expr>> args;
@@ -265,12 +267,11 @@ std::unique_ptr<CallExpr> Parser::parse_call_expr()
         {
             auto expr = parse_expression();
             args.push_back(std::move(expr));
-        }
-        while (match(tok_comma));
+        } while (match(tok_comma));
     }
 
     consume(tok_close_paren, "Expected ')' after function call args");
-    
+
     return std::make_unique<CallExpr>(name, std::move(args));
 }
 

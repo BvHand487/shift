@@ -134,7 +134,7 @@ enum TokenType
     ROW(tok_gt, binop_gt) \
     ROW(tok_gte, binop_gte) \
     ROW(tok_lt, binop_lt) \
-    ROW(tok_lte, binop_gte) \
+    ROW(tok_lte, binop_lte) \
     ROW(tok_eq, binop_eq) \
     ROW(tok_neq, binop_neq)
 

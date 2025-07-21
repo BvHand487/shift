@@ -1,0 +1,58 @@
+#include "ast.h"
+
+using namespace ast;
+
+// - - - - - DECLARATIONS - - - - - //
+Prototype::Prototype(
+    const std::string &name,
+    std::vector<std::unique_ptr<Variable>> args) : name(name),
+                                                   args(std::move(args)) {}
+
+Definition::Definition(
+    std::unique_ptr<Prototype> type,
+    std::unique_ptr<Block> body) : type(std::move(type)),
+                                   body(std::move(body)) {}
+
+// - - - - - STATEMENTS - - - - - //
+Block::Block(std::vector<std::unique_ptr<Statement>> stmts) : statements(std::move(stmts)) {}
+
+If::If(
+    std::unique_ptr<Expr> cond,
+    std::unique_ptr<Block> then_branch,
+    std::unique_ptr<Block> else_branch) : cond(std::move(cond)),
+                                          then_branch(std::move(then_branch)),
+                                          else_branch(std::move(else_branch)) {}
+
+While::While(
+    std::unique_ptr<Expr> cond,
+    std::unique_ptr<Block> body) : cond(std::move(cond)),
+                                   body(std::move(body)) {}
+
+Assignment::Assignment(
+    std::unique_ptr<Variable> lhs,
+    std::unique_ptr<Expr> rhs) : lhs(std::move(lhs)),
+                                 rhs(std::move(rhs)) {}
+
+Return::Return(std::unique_ptr<Expr> value) : value(std::move(value)) {}
+
+ExprStatement::ExprStatement(std::unique_ptr<Expr> expression) : expression(std::move(expression)) {}
+
+// - - - - - EXPRESSIONS - - - - - //
+Variable::Variable(const std::string &name) : name(name) {}
+
+CallExpr::CallExpr(
+    const std::string &callee,
+    std::vector<std::unique_ptr<Expr>> args) : callee(callee),
+                                               args(std::move(args)) {}
+
+BinaryOp::BinaryOp(
+    BinaryOpType op,
+    std::unique_ptr<Expr> lhs,
+    std::unique_ptr<Expr> rhs) : op(op),
+                                 lhs(std::move(lhs)),
+                                 rhs(std::move(rhs)) {}
+
+UnaryOp::UnaryOp(
+    UnaryOpType op,
+    std::unique_ptr<Expr> rhs) : op(op),
+                                 rhs(std::move(rhs)) {}

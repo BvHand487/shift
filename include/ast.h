@@ -7,8 +7,6 @@
 #include <ostream>
 
 #include "ast/base.h"
-#include "ast/control.h"
-#include "ast/literals.h"
-#include "ast/functions.h"
+#include "ast/visitor.h"
 
 #endif

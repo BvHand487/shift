@@ -21,7 +21,7 @@
 #include "llvm/Passes/StandardInstrumentations.h"
 
 #include "compiler.h"
-#include "ast/ast.h"
+#include "ast.h"
 
 std::unique_ptr<llvm::LLVMContext> context;
 std::unique_ptr<llvm::Module> module;

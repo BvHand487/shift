@@ -7,7 +7,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
 set(CMAKE_BUILD_TYPE Debug)
-file(GLOB SOURCES "src/*.cpp")
+
+file(GLOB_RECURSE SOURCES 
+    "src/*.cpp"
+    "src/**/*.cpp"
+)
 add_executable(shift ${SOURCES})
 
 find_package(LLVM REQUIRED CONFIG)

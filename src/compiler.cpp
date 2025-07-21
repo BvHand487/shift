@@ -7,26 +7,9 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/BasicBlock.h"
 
-#include "compiler.h"
 #include "lexer.h"
 #include "parser.h"
-
-std::string read_file(const std::string &path)
-{
-    std::ifstream file(path, std::ios::binary);
-
-    if (!file.is_open())
-        return "";
-
-    file.seekg(0, std::ios::end);
-    std::size_t size = file.tellg();
-    std::string buffer(size, '\0');
-    file.seekg(0);
-    file.read(&buffer[0], size);
-
-    file.close();
-    return buffer;
-}
+#include "compiler.h"
 
 
 int compile(const std::string &path)
@@ -42,11 +25,14 @@ int compile(const std::string &path)
     auto parser = Parser(tokens);
     auto ast = parser.parse();
 
+    auto printer = PrintVisitor();
     for (const auto &a : ast)
-        std::cout << *a << std::endl;
+    {
+        a->accept(printer);
+    }
 
-    for (const auto &statement : ast)
-        statement->codegen();
+    // for (const auto &statement : ast)
+    //     statement->codegen();
 
     return 0;
 }

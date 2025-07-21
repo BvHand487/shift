@@ -5,6 +5,6 @@
 
 std::string to_escaped_string(const std::string& str);
 
-std::string create_indent(size_t indent_level, size_t indent_size=4);
+std::string read_file(const std::string& path);
 
 #endif
