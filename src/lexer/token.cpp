@@ -1,8 +1,7 @@
 #include <cstdlib>
 #include <string>
 
-#include "token.h"
-#include "position.h"
+#include "lexer.h"
 
 
 Token::Token(TokenType type, Position position, std::string lexeme)

@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "ast.h"
-#include "token.h"
+#include "lexer.h"
 
 using namespace ast;
 

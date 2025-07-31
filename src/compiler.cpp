@@ -16,7 +16,9 @@ int compile(const std::string &path)
 {
     std::string contents = std::move(read_file(path));
 
-    auto tokens = tokenize(contents);
+    auto lexer = Lexer(contents);
+    auto tokens = lexer.tokenize();
+
     for (auto t : tokens)
         std::cout << t << std::endl;
 

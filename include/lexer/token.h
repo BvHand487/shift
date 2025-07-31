@@ -1,13 +1,13 @@
-#ifndef TOKEN_H
-#define TOKEN_H
+#ifndef LEXER_TOKEN_H
+#define LEXER_TOKEN_H
 
 #include <string>
 #include <ostream>
 #include <unordered_map>
 
 #include "operators.h"
-#include "position.h"
 #include "utils.h"
+
 
 enum TokenType
 {
@@ -176,6 +176,17 @@ const std::unordered_map<TokenType, UnaryOpType> token_to_unary_op = {
 #undef ROW
 
 
+struct Position
+{
+public:
+    size_t line;
+    size_t column;
+    
+    Position() = default;
+    Position(size_t line, size_t column) : line(line), column(column) {}
+};
+
+
 struct Token
 {
     TokenType type;
@@ -188,8 +199,7 @@ public:
 
     friend std::ostream& operator<< (std::ostream& out, const Token& obj)
     {
-        out << "\'" << to_escaped_string(obj.lexeme) << "\' -> " << token_to_str.at(obj.type);
-        return out;
+        return out << "\'" << to_escaped_string(obj.lexeme) << "\' -> " << token_to_str.at(obj.type);
     }
 };
 

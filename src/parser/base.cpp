@@ -1,3 +1,4 @@
+#include <format>
 #include <sstream>
 #include <iostream>
 
@@ -27,6 +28,7 @@ bool Parser::match(TokenType type)
 
     return false;
 }
+
 const Token &Parser::consume(TokenType expected, const std::string &error)
 {
     if (check(expected))

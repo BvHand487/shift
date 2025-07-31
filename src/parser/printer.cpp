@@ -140,7 +140,7 @@ void PrintVisitor::visit(CallExpr &node)
 void PrintVisitor::visit(BinaryOp &node)
 {
     print_prefix(true);
-    out << "BinaryOp(" << node.op << ")\n";
+    out << "BinaryOp(" << binop_to_str.at(node.op) << ")\n";
     push_indent(false);
     node.lhs->accept(*this);
     pop_indent();
@@ -153,7 +153,7 @@ void PrintVisitor::visit(BinaryOp &node)
 void PrintVisitor::visit(UnaryOp &node)
 {
     print_prefix(true);
-    out << "UnaryOp(" << node.op << ")\n";
+    out << "UnaryOp(" << unary_to_str.at(node.op) << ")\n";
     push_indent(true);
     node.rhs->accept(*this);
     pop_indent();
