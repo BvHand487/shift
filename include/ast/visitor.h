@@ -8,6 +8,8 @@ namespace ast
     class Visitor
     {
     public:
+        virtual ~Visitor() = default;
+
         // Literals
         virtual void visit(Number &node) = 0;
         virtual void visit(String &node) = 0;

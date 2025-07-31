@@ -1,9 +1,10 @@
 #ifndef AST_BASE_H
 #define AST_BASE_H
 
+#include <memory>
+#include <ostream>
 #include <string>
 #include <vector>
-#include <ostream>
 
 #include "operators.h"
 #include "utils.h"
@@ -188,10 +189,13 @@ namespace ast
     public:
         std::vector<std::unique_ptr<Variable>> args;
         std::string name;
+        bool isExtern = false;
 
         Prototype(
             const std::string &name,
-            std::vector<std::unique_ptr<Variable>> args);
+            std::vector<std::unique_ptr<Variable>> args,
+            bool isExtern = false
+        );
 
         void accept(Visitor &v) override;
     };

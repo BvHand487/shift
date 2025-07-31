@@ -42,10 +42,24 @@ const Token &Parser::consume(TokenType expected, const std::string &error)
 
 std::unique_ptr<Declaration> Parser::parse_declaration()
 {
+    if (match(tok_extern)) {
+        consume(tok_fn, "Expected 'fn' after 'extern'");
+        return parse_extern();
+    }
+
     if (match(tok_fn))
         return parse_function();
 
     throw std::runtime_error("Expected declaration (e.g. 'fn')");
+}
+
+std::unique_ptr<Declaration> Parser::parse_extern()
+{
+    auto proto = parse_prototype();
+    consume(tok_delimiter, "Expected ';' after extern declaration");
+    proto->isExtern = true;
+
+    return std::move(proto);
 }
 
 std::unique_ptr<Declaration> Parser::parse_function()

@@ -20,46 +20,21 @@
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/StandardInstrumentations.h"
 
+#include "generator.h"
 #include "compiler.h"
-#include "ast.h"
 
-std::unique_ptr<llvm::LLVMContext> context;
-std::unique_ptr<llvm::Module> module;
-std::unique_ptr<llvm::IRBuilder<>> builder;
 
-std::unique_ptr<llvm::FunctionPassManager> theFPM;
-std::unique_ptr<llvm::LoopAnalysisManager> theLAM;
-std::unique_ptr<llvm::FunctionAnalysisManager> theFAM;
-std::unique_ptr<llvm::CGSCCAnalysisManager> theCGAM;
-std::unique_ptr<llvm::ModuleAnalysisManager> theMAM;
-std::unique_ptr<llvm::PassInstrumentationCallbacks> thePIC;
-std::unique_ptr<llvm::StandardInstrumentations> theSI;
+std::unique_ptr<llvm::LLVMContext> CodegenVisitor::context = std::make_unique<llvm::LLVMContext>();
+std::unique_ptr<llvm::Module> CodegenVisitor::module = std::make_unique<llvm::Module>("main", *context);
 
-static void initModule(const std::string_view &name)
-{
-    context = std::make_unique<llvm::LLVMContext>();
-    module = std::make_unique<llvm::Module>(name, *context);
-    builder = std::make_unique<llvm::IRBuilder<>>(*context);
+std::unique_ptr<llvm::FunctionPassManager> CodegenVisitor::theFPM = std::make_unique<llvm::FunctionPassManager>();
+std::unique_ptr<llvm::LoopAnalysisManager> CodegenVisitor::theLAM = std::make_unique<llvm::LoopAnalysisManager>();
+std::unique_ptr<llvm::FunctionAnalysisManager> CodegenVisitor::theFAM = std::make_unique<llvm::FunctionAnalysisManager>();
+std::unique_ptr<llvm::CGSCCAnalysisManager> CodegenVisitor::theCGAM = std::make_unique<llvm::CGSCCAnalysisManager>();
+std::unique_ptr<llvm::ModuleAnalysisManager> CodegenVisitor::theMAM = std::make_unique<llvm::ModuleAnalysisManager>();
+std::unique_ptr<llvm::PassInstrumentationCallbacks> CodegenVisitor::thePIC = std::make_unique<llvm::PassInstrumentationCallbacks>();
+std::unique_ptr<llvm::StandardInstrumentations> CodegenVisitor::theSI = std::make_unique<llvm::StandardInstrumentations>(*context, true);
 
-    theFPM = std::make_unique<llvm::FunctionPassManager>();
-    theLAM = std::make_unique<llvm::LoopAnalysisManager>();
-    theFAM = std::make_unique<llvm::FunctionAnalysisManager>();
-    theCGAM = std::make_unique<llvm::CGSCCAnalysisManager>();
-    theMAM = std::make_unique<llvm::ModuleAnalysisManager>();
-    thePIC = std::make_unique<llvm::PassInstrumentationCallbacks>();
-    theSI = std::make_unique<llvm::StandardInstrumentations>(*context, true);
-    theSI->registerCallbacks(*thePIC, theMAM.get());
-
-    theFPM->addPass(llvm::InstCombinePass());
-    theFPM->addPass(llvm::ReassociatePass());
-    theFPM->addPass(llvm::GVNPass());
-    theFPM->addPass(llvm::SimplifyCFGPass());
-
-    llvm::PassBuilder PB;
-    PB.registerModuleAnalyses(*theMAM);
-    PB.registerFunctionAnalyses(*theFAM);
-    PB.crossRegisterProxies(*theLAM, *theFAM, *theCGAM, *theMAM);
-}
 
 int main(int argc, char *argv[])
 {
@@ -69,35 +44,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    initModule("main");
-
-    llvm::InitializeAllTargetInfos();
-    llvm::InitializeAllTargets();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmParsers();
-    llvm::InitializeAllAsmPrinters();
-
-    std::string error;
-    std::string targetTriple = llvm::sys::getDefaultTargetTriple();
-    const llvm::Target *target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
-
-    if (!target)
-    {
-        llvm::errs() << error;
-        return 1;
-    }
-
-    std::string cpu = "generic";
-    std::string features = "";
-
-    llvm::TargetOptions opt;
-    llvm::TargetMachine *targetMachine = target->createTargetMachine(targetTriple, cpu, features, opt, llvm::Reloc::PIC_);
-
-    module->setDataLayout(targetMachine->createDataLayout());
-    module->setTargetTriple(targetTriple);
-
     compile(argv[1]);
-    module->print(llvm::errs(), nullptr);
+    CodegenVisitor::module->print(llvm::errs(), nullptr);
 
     // std::string inputFilename = argv[1];
     // std::string outputFilename = inputFilename.substr(0, inputFilename.find_last_of('.')) + ".o";

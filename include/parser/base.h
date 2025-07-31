@@ -45,9 +45,10 @@ public:
     std::unique_ptr<Block> parse_block();
 
     // Declarations
+    std::unique_ptr<Prototype> parse_prototype();
+    std::unique_ptr<Declaration> parse_extern();
     std::unique_ptr<Declaration> parse_function();
     std::unique_ptr<Declaration> parse_declaration();
-    std::unique_ptr<Prototype> parse_prototype();
 };
 
 

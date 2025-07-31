@@ -4,11 +4,10 @@
 #include <iostream>
 #include <string>
 
-#include "llvm/IR/Function.h"
-#include "llvm/IR/BasicBlock.h"
 
 #include "lexer.h"
 #include "parser.h"
+#include "generator.h"
 #include "compiler.h"
 
 
@@ -33,8 +32,11 @@ int compile(const std::string &path)
         a->accept(printer);
     }
 
-    // for (const auto &statement : ast)
-    //     statement->codegen();
+    auto generator = CodegenVisitor();
+    for (const auto &a : ast)
+    {
+        a->accept(generator);
+    }
 
     return 0;
 }

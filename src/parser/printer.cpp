@@ -163,7 +163,12 @@ void PrintVisitor::visit(UnaryOp &node)
 void PrintVisitor::visit(Prototype &node)
 {
     print_prefix(true);
-    out << "fn " << node.name << "\n";
+    
+    if (node.isExtern)
+        out << "extern fn " << node.name << "\n";
+    else
+        out << "fn " << node.name << "\n";
+
     for (size_t i = 0; i < node.args.size(); ++i)
     {
         push_indent(i == node.args.size() - 1);

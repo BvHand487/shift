@@ -5,8 +5,10 @@ using namespace ast;
 // - - - - - DECLARATIONS - - - - - //
 Prototype::Prototype(
     const std::string &name,
-    std::vector<std::unique_ptr<Variable>> args) : name(name),
-                                                   args(std::move(args)) {}
+    std::vector<std::unique_ptr<Variable>> args,
+    bool isExtern) : name(name),
+                     args(std::move(args)),
+                     isExtern(isExtern) {}
 
 Definition::Definition(
     std::unique_ptr<Prototype> type,
