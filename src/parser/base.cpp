@@ -42,7 +42,8 @@ const Token &Parser::consume(TokenType expected, const std::string &error)
 
 std::unique_ptr<Declaration> Parser::parse_declaration()
 {
-    if (match(tok_extern)) {
+    if (match(tok_extern))
+    {
         consume(tok_fn, "Expected 'fn' after 'extern'");
         return parse_extern();
     }
@@ -78,25 +79,72 @@ std::unique_ptr<Declaration> Parser::parse_function()
     return std::move(proto);
 }
 
+std::unique_ptr<Parameter> Parser::parse_parameter()
+{
+    consume(tok_identifier, "Expected identifier");
+    std::string name = prev().lexeme;
+
+    Type type = Type::Unknown;
+    if (match(tok_colon))
+    {
+        if (token_to_type.find(peek().type) != token_to_type.end())
+        {
+            type = token_to_type.at(peek().type);
+            advance();
+        }
+        else
+            throw std::runtime_error("Expected a type after ':' in parameter");
+    }
+
+    std::unique_ptr<Expr> init = nullptr;
+    if (match(tok_assignment))
+        init = parse_expression();
+
+    return std::make_unique<Parameter>(name, type, std::move(init));
+}
+
 std::unique_ptr<Prototype> Parser::parse_prototype()
 {
     std::string name = consume(tok_identifier, "Expected function name").lexeme;
 
     consume(tok_open_paren, "Expected '(' after function name");
 
-    std::vector<std::unique_ptr<Variable>> args;
+    std::vector<std::unique_ptr<Parameter>> args;
+    bool isVarArg = false;
+
     if (!check(tok_close_paren))
     {
         do
         {
-            auto arg = parse_variable();
+            if (match(tok_varargs))
+            {
+                isVarArg = true;
+                break;
+            }
+
+            auto arg = parse_parameter();
             args.push_back(std::move(arg));
         } while (match(tok_comma));
     }
 
     consume(tok_close_paren, "Expected ')' after parameters");
 
-    return std::make_unique<Prototype>(name, std::move(args));
+    Type retType = Type::Void;
+    if (match(tok_arrow))
+    {
+        if (token_to_type.find(peek().type) != token_to_type.end())
+        {
+            retType = token_to_type.at(peek().type);
+            advance();
+        }
+        else
+            throw std::runtime_error("Expected a type after '->' in function prototype");
+    }
+
+    auto proto = std::make_unique<Prototype>(retType, name, std::move(args));
+    proto->isVarArg = isVarArg;
+
+    return proto;
 }
 
 std::unique_ptr<Block> Parser::parse_block()
@@ -114,10 +162,38 @@ std::unique_ptr<Block> Parser::parse_block()
     return std::make_unique<Block>(std::move(statements));
 }
 
+std::unique_ptr<VariableDecl> Parser::parse_variable_decl()
+{
+    consume(tok_let, "Expected 'let' before variable declaration");
+
+    consume(tok_identifier, "Expected identifier");
+    std::string name = prev().lexeme;
+
+    Type type = Type::Unknown;
+    if (match(tok_colon))
+    {
+        if (token_to_type.find(peek().type) != token_to_type.end())
+        {
+            type = token_to_type.at(peek().type);
+            advance();
+        }
+        else
+            throw std::runtime_error("Expected a type after ':' in variable declaration");
+    }
+
+    // mandatory initializaton for now
+    consume(tok_assignment, "Expected '=' after variable declaration");
+    std::unique_ptr<Expr> init = parse_expression();
+
+    consume(tok_delimiter, "Expected ';' after variable declaration");
+
+    return std::make_unique<VariableDecl>(name, type, std::move(init));
+}
+
 std::unique_ptr<Statement> Parser::parse_statement()
 {
-    if (check(tok_identifier) && next().type == tok_assignment)
-        return parse_assignment();
+    if (check(tok_let))
+        return parse_variable_decl();
 
     if (match(tok_return))
         return parse_return_stmt();

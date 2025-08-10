@@ -1,0 +1,135 @@
+# Shift
+Shift is a custom programming language compiler implemented in C++ using LLVM. It supports features like user-defined functions, variables, expressions, and external function calls. The compiler lexes, parses, analyzes, and generates LLVM IR, which is then compiled to native code.
+
+## Building
+### Prerequisites
+- C++20 compatible compiler
+- CMake (version 3.10+)
+- LLVM (with development headers and libraries installed)
+
+### Steps
+These steps will create the executable ```shift``` inside the build directory.
+
+1. Clone the repository:
+
+    ```
+    git clone https://github.com/BvHand487/shift.git
+    cd shift
+    ```
+
+2. Create a build directory and run CMake:
+
+    ```
+    mkdir build
+    cd build
+    cmake ..
+    ```
+
+3. Build the project:
+
+    ```
+    make
+    ```
+
+## Running
+To run the compiler on a Shift source file:
+
+```
+./shift path/to/source_file.shf
+```
+
+This will compile the source and generate the corresponding output (for now an object file and an executable in the same location as the source file).
+
+
+## Language
+This language was aimed to be similar to C-like languages, whilst offering a clean syntax and compile-time guarantees without sacrificing too much runtime speed.
+
+### Syntax
+- Functions are indicated with the `fn` keyword followed by the function name. A `extern` before the `fn` keyword marks a function as extern and a `..` at the end of the parameter list marks it as having variable args.
+
+- All variables must be declared and that is done with the `let` keyword. Depending on the context, a type annotation might be required:
+    ```
+    let a: int = 123;
+    let b = 123;
+    ```
+
+- Type annotations for variables and function paramaters are indicated by a colon, followed by the type. The only exception to this are the return types of a function, where the type is preceded by an arrow:
+    
+    ```
+    fn foo(x: int, y: int) -> bool { ... }
+    ...
+    let x: int = 5;
+    ```
+
+    *Type annotations are not needed when the type can be inferred, e.g. you can write `let x = 5;`.*
+
+- Calling functions is as simple as writing the function name followed by parentheses which contain the arguments:
+    ```
+    fn add(x: int, y: int) -> int
+    {
+        return x + y;
+    }
+    ...
+    add(5, 4);  // should be 9
+    ```
+
+- If statements are similar to the ones in other languages. There are 2 major problems however: the curly braces cannot be omitted and must always be present and the `else if` construct also doesn't exist:
+    ```
+    let x = 85347;
+
+    if (x > 0)
+    {
+        printf("positive!");
+    }
+    else
+    {
+        if (x == 0)
+        {
+            printf("zero!");
+        }
+        else
+        {
+            printf("negative!");
+        }
+    }
+    ```
+
+- The logical operators `&&`, `||` and `!` are interchangable with `and`, `or` and `not` respectively.
+
+## Examples
+### Example 1 - Printing the N-th Fibonacci number:
+The following program computes the N-th Fibonacci number and prints it to stdout using `printf`.
+<br/>
+In this case it prints the 6th number, which is 8.
+The table below shows the Fibonacci sequence from F<sub>0</sub> to F<sub>7</sub>.
+| F<sub>0</sub> | F<sub>1</sub> | F<sub>2</sub> | F<sub>3</sub> | F<sub>4</sub> | F<sub>5</sub> | F<sub>6</sub> | F<sub>7</sub> |
+|---|---|---|---|---|---|---|---|
+| 0 | 1 | 1 | 2 | 3 | 5 | 8 |13 |
+<br/>
+```
+extern fn printf(fmt: str, ..) -> int;
+
+fn fib(n: int) -> int
+{
+    if (n == 0) {
+        return 0;
+    }
+
+    if (n == 1) {
+        return 1;
+    }
+
+    return fib(n - 2) + fib(n - 1);
+}
+
+fn main() -> int
+{
+    let x = 6;
+
+    let res = fib(x);
+
+    printf("%d\n", res);
+
+    return 0;
+}
+```

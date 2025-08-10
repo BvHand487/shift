@@ -16,13 +16,14 @@ namespace ast
         virtual void visit(Boolean &node) = 0;
 
         // Statements
+        virtual void visit(VariableDecl &node) = 0;
+        virtual void visit(Assignment &node) = 0;
         virtual void visit(Block &node) = 0;
         virtual void visit(If &node) = 0;
         virtual void visit(While &node) = 0;
-        virtual void visit(Assignment &node) = 0;
         virtual void visit(Return &node) = 0;
         virtual void visit(ExprStatement &node) = 0;
-
+        
         // Expressions
         virtual void visit(Variable &node) = 0;
         virtual void visit(CallExpr &node) = 0;
@@ -32,6 +33,8 @@ namespace ast
         // Declarations
         virtual void visit(Prototype &node) = 0;
         virtual void visit(Definition &node) = 0;
+
+        virtual void visit(Parameter &node) = 0;
     };
 }
 

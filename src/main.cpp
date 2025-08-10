@@ -47,28 +47,5 @@ int main(int argc, char *argv[])
     compile(argv[1]);
     CodegenVisitor::module->print(llvm::errs(), nullptr);
 
-    // std::string inputFilename = argv[1];
-    // std::string outputFilename = inputFilename.substr(0, inputFilename.find_last_of('.')) + ".o";
-
-    // std::error_code EC;
-    // llvm::raw_fd_ostream dest(outputFilename, EC, llvm::sys::fs::OF_None);
-
-    // if (EC)
-    // {
-    //     llvm::errs() << "Could not open output file: " << EC.message();
-    //     return 1;
-    // }
-
-    // llvm::legacy::PassManager pass;
-    // auto filetype = llvm::CodeGenFileType::ObjectFile;
-
-    // if (targetMachine->addPassesToEmitFile(pass, dest, nullptr, filetype)) {
-    //     llvm::errs() << "Target machine can't emit a file of this type";
-    //     return 1;
-    // }
-
-    // pass.run(*module);
-    // dest.flush();
-
     return 0;
 }

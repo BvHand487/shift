@@ -35,17 +35,19 @@ public:
     std::unique_ptr<Expr> parse_unary_expr();
     std::unique_ptr<CallExpr> parse_call_expr();
     std::unique_ptr<Variable> parse_variable();
-
+    
     // Statements
     std::unique_ptr<Statement> parse_statement();
-    std::unique_ptr<Assignment> parse_assignment();
     std::unique_ptr<Return> parse_return_stmt();
     std::unique_ptr<If> parse_if_stmt();
     std::unique_ptr<While> parse_while_stmt();
     std::unique_ptr<Block> parse_block();
-
+    std::unique_ptr<VariableDecl> parse_variable_decl();
+    std::unique_ptr<Assignment> parse_assignment();
+    
     // Declarations
     std::unique_ptr<Prototype> parse_prototype();
+    std::unique_ptr<Parameter> parse_parameter();
     std::unique_ptr<Declaration> parse_extern();
     std::unique_ptr<Declaration> parse_function();
     std::unique_ptr<Declaration> parse_declaration();

@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "operators.h"
+#include "types.h"
 #include "utils.h"
 
 namespace ast
@@ -22,6 +23,8 @@ namespace ast
 
     class Expr : public ASTNode
     {
+    public:
+        Type type = Type::Unknown;
     };
 
     class Statement : public ASTNode
@@ -30,6 +33,21 @@ namespace ast
 
     class Declaration : public ASTNode
     {
+    };
+
+    class Parameter : public ASTNode
+    {
+    public:
+        Type type;
+        std::string name;
+        std::unique_ptr<Expr> init;
+
+        Parameter(
+            const std::string& name,
+            Type type = Type::Unknown,
+            std::unique_ptr<Expr> init = nullptr);
+
+        void accept(Visitor &v) override;
     };
 
     // - - - - - LITERALS - - - - - //
@@ -41,24 +59,33 @@ namespace ast
         explicit Literal(T value) : value(value) {}
     };
 
-    class Number : public Literal<double>
+    class Number : public Literal<int>
     {
     public:
-        using Literal::Literal;
+        Number(int value) : Literal<int>(value) {
+            type = Type::Int;
+        }
+
         void accept(Visitor &v) override;
     };
 
     class Boolean : public Literal<bool>
     {
     public:
-        using Literal::Literal;
+        Boolean(bool value) : Literal<bool>(value) {
+            type = Type::Bool;
+        }
+
         void accept(Visitor &v) override;
     };
 
     class String : public Literal<std::string>
     {
     public:
-        using Literal::Literal;
+        String(const std::string& value) : Literal<std::string>(value) {
+            type = Type::String;
+        }
+
         void accept(Visitor &v) override;
     };
     // - - - - - - - - - - - - - - - //
@@ -115,6 +142,31 @@ namespace ast
     // - - - - - - - - - - - - - - - - //
 
     // - - - - - STATEMENTS - - - - - //
+    class VariableDecl : public Statement
+    {
+    public:
+        std::string name;
+        Type type;
+        std::unique_ptr<Expr> init;
+
+        VariableDecl(const std::string &name, Type type = Type::Unknown, std::unique_ptr<Expr> init = nullptr);
+
+        void accept(Visitor &v) override;
+    };
+
+    class Assignment : public Statement
+    {
+    public:
+        std::unique_ptr<Variable> lhs;
+        std::unique_ptr<Expr> rhs;
+
+        Assignment(
+            std::unique_ptr<Variable> lhs,
+            std::unique_ptr<Expr> rhs);
+
+        void accept(Visitor &v) override;
+    };
+    
     class Block : public Statement
     {
     public:
@@ -151,19 +203,6 @@ namespace ast
         void accept(Visitor &v) override;
     };
 
-    class Assignment : public Statement
-    {
-    public:
-        std::unique_ptr<Variable> lhs;
-        std::unique_ptr<Expr> rhs;
-
-        Assignment(
-            std::unique_ptr<Variable> lhs,
-            std::unique_ptr<Expr> rhs);
-
-        void accept(Visitor &v) override;
-    };
-
     class Return : public Statement
     {
     public:
@@ -187,14 +226,18 @@ namespace ast
     class Prototype : public Declaration
     {
     public:
-        std::vector<std::unique_ptr<Variable>> args;
+        Type retType;
+        std::vector<std::unique_ptr<Parameter>> args;
         std::string name;
         bool isExtern = false;
+        bool isVarArg = false;
 
         Prototype(
+            Type retType,
             const std::string &name,
-            std::vector<std::unique_ptr<Variable>> args,
-            bool isExtern = false
+            std::vector<std::unique_ptr<Parameter>> args,
+            bool isExtern = false,
+            bool isVarArg = false
         );
 
         void accept(Visitor &v) override;

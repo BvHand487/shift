@@ -50,6 +50,10 @@ private:
     std::unique_ptr<llvm::IRBuilder<>> builder;
     std::map<std::string, llvm::AllocaInst *> namedValues;
 
+    llvm::TargetMachine *targetMachine;
+
+    llvm::Type* type_to_llvm_type(Type type);
+
 public:
     static std::unique_ptr<llvm::LLVMContext> context;
     static std::unique_ptr<llvm::Module> module;
@@ -65,18 +69,24 @@ public:
     CodegenVisitor();
     ~CodegenVisitor();
 
+    bool write_to_file(const std::string &path);
+
+
+    void visit(Parameter &node) override;
+
     // Declaration Nodes
     void visit(Prototype &node) override;
     void visit(Definition &node) override;
 
     // Statement Nodes
+    void visit(VariableDecl &node) override;
+    void visit(Assignment &node) override;
     void visit(Block &node) override;
     void visit(If &node) override;
     void visit(While &node) override;
-    void visit(Assignment &node) override;
     void visit(Return &node) override;
     void visit(ExprStatement &node) override;
-
+    
     // Expression Nodes
     void visit(Variable &node) override;
     void visit(CallExpr &node) override;

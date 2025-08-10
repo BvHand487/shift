@@ -146,17 +146,26 @@ void Lexer::scan_token()
     case '}':
         add_token(tok_close_brace);
         break;
+    case ':':
+        add_token(tok_colon);
+        break;
     case '<':
         add_token(match('=') ? tok_lte : tok_lt);
         break;
     case '>':
         add_token(match('=') ? tok_gte : tok_gt);
         break;
+    case '&':
+        add_token(match('&') ? tok_and : tok_ampersand);
+        break;
+    case '|':
+        add_token(match('|') ? tok_or : tok_pipe);
+        break;
     case '+':
         add_token(tok_plus);
         break;
     case '-':
-        add_token(tok_minus);
+        add_token(match('>') ? tok_arrow : tok_minus);
         break;
     case '*':
         add_token(match('*') ? tok_exponentiation : tok_star);
@@ -172,6 +181,12 @@ void Lexer::scan_token()
         break;
     case '!':
         add_token(match('=') ? tok_neq : tok_not);
+        break;
+    case ',':
+        add_token(tok_comma);
+        break;
+    case '.':
+        add_token(match('.') ? tok_varargs : tok_invalid);
         break;
     case '"':
         scan_string();
@@ -220,7 +235,36 @@ void Lexer::scan_string()
         return;
     }
 
-    add_token(tok_string);
+    advance();
+
+    std::string raw = "";
+    if (current > start)
+        raw = source.substr(start + 1, current - start - 2);
+
+    std::string value;
+    for (size_t i = 0; i < raw.size(); ++i)
+    {
+        if (raw[i] == '\\' && i + 1 < raw.size())
+        {
+            ++i;
+            switch (raw[i])
+            {
+                case 'n':  value.push_back('\n'); break;
+                case 't':  value.push_back('\t'); break;
+                case '\\': value.push_back('\\'); break;
+                case '"':  value.push_back('"');  break;
+                default:
+                    value.push_back(raw[i]);
+                    break;
+            }
+        }
+        else
+        {
+            value.push_back(raw[i]);
+        }
+    }
+
+    add_token(tok_string, value);
 }
 
 void Lexer::scan_number()

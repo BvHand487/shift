@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
 set(CMAKE_BUILD_TYPE Debug)
+add_compile_options(-fno-omit-frame-pointer -g3 -ggdb3 -fvar-tracking-assignments)
 
 file(GLOB_RECURSE SOURCES 
     "src/*.cpp"

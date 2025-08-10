@@ -1,27 +1,25 @@
-#ifndef PARSER_PRINTER_H
-#define PARSER_PRINTER_H
+#ifndef ANALYZER_BASE_H
+#define ANALYZER_BASE_H
 
-#include <iostream>
+#include <vector>
+#include <string>
+#include <memory>
+#include <map>
 
+#include "analyzer/symbols.h"
 #include "ast.h"
 
 using namespace ast;
 
-class PrintVisitor : public Visitor
-{
-private:
-    std::ostream &out;
-    std::string prefix;
-    std::vector<bool> indent_stack;
 
-    void print_prefix(bool is_last);
-    void push_indent(bool is_last);
-    void pop_indent();
+class AnalyzerVisitor : public Visitor
+{
+    std::unique_ptr<SymbolTable> symbols = std::make_unique<SymbolTable>();
+    Type currentFuncReturnType = Type::Int;
 
 public:
-    PrintVisitor(std::ostream &out = std::cout) : out(out) {}
+    AnalyzerVisitor() {}
 
-    
     void visit(Parameter &node) override;
 
     // Declaration Nodes
@@ -36,7 +34,7 @@ public:
     void visit(While &node) override;
     void visit(Return &node) override;
     void visit(ExprStatement &node) override;
-    
+
     // Expression Nodes
     void visit(Variable &node) override;
     void visit(CallExpr &node) override;
@@ -48,5 +46,6 @@ public:
     void visit(String &node) override;
     void visit(Boolean &node) override;
 };
+
 
 #endif

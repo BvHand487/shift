@@ -2,13 +2,24 @@
 
 using namespace ast;
 
+Parameter::Parameter(
+    const std::string &name,
+    Type type,
+    std::unique_ptr<Expr> init) : name(name),
+                                  type(type),
+                                  init(std::move(init)) {}
+
 // - - - - - DECLARATIONS - - - - - //
 Prototype::Prototype(
+    Type retType,
     const std::string &name,
-    std::vector<std::unique_ptr<Variable>> args,
-    bool isExtern) : name(name),
+    std::vector<std::unique_ptr<Parameter>> args,
+    bool isExtern,
+    bool isVarArg) : retType(retType),
+                     name(name),
                      args(std::move(args)),
-                     isExtern(isExtern) {}
+                     isExtern(isExtern),
+                     isVarArg(isVarArg) {}
 
 Definition::Definition(
     std::unique_ptr<Prototype> type,
@@ -16,6 +27,18 @@ Definition::Definition(
                                    body(std::move(body)) {}
 
 // - - - - - STATEMENTS - - - - - //
+VariableDecl::VariableDecl(
+    const std::string &name,
+    Type type,
+    std::unique_ptr<Expr> init) : name(name),
+                                  type(type),
+                                  init(std::move(init)) {}
+
+Assignment::Assignment(
+    std::unique_ptr<Variable> lhs,
+    std::unique_ptr<Expr> rhs) : lhs(std::move(lhs)),
+                                 rhs(std::move(rhs)) {}
+
 Block::Block(std::vector<std::unique_ptr<Statement>> stmts) : statements(std::move(stmts)) {}
 
 If::If(
@@ -29,11 +52,6 @@ While::While(
     std::unique_ptr<Expr> cond,
     std::unique_ptr<Block> body) : cond(std::move(cond)),
                                    body(std::move(body)) {}
-
-Assignment::Assignment(
-    std::unique_ptr<Variable> lhs,
-    std::unique_ptr<Expr> rhs) : lhs(std::move(lhs)),
-                                 rhs(std::move(rhs)) {}
 
 Return::Return(std::unique_ptr<Expr> value) : value(std::move(value)) {}
 
