@@ -60,6 +60,29 @@ void AnalyzerVisitor::visit(Definition &node)
 
     FuncSymbol *funcSymPtr = symbols->lookupFunction(node.type->name);
     currentFuncReturnType = funcSymPtr->retType;
+    
+    // missing return statement at the end of a function
+    if (dynamic_cast<Return*>(node.body->statements.back().get()) == nullptr)
+    {
+        if (currentFuncReturnType == Type::Void)
+        {
+            auto emptyReturnStmnt = std::make_unique<Return>(nullptr);
+            node.body->statements.push_back(std::move(emptyReturnStmnt));
+        }
+        // missing return statement from a typed function
+        else
+        {
+            // insert return 0 in the main function only
+            if (node.type->name == "main")
+            {
+                auto returnStmnt = std::make_unique<Return>(std::make_unique<Number>(0));
+                node.body->statements.push_back(std::move(returnStmnt));
+            }
+            else
+                throw std::runtime_error("Missing return statement in a non-void function");
+        }
+    }
+    
     symbols->enterScope();
 
     for (const auto &arg : funcSymPtr->args)
@@ -74,7 +97,6 @@ void AnalyzerVisitor::visit(Definition &node)
     }
 
     node.body->accept(*this);
-
     symbols->exitScope();
 
     funcSymPtr->isDefined = true;
@@ -83,20 +105,24 @@ void AnalyzerVisitor::visit(Definition &node)
 // Statement Nodes
 void AnalyzerVisitor::visit(VariableDecl &node)
 {
-    node.init->accept(*this);
-
-    if (node.type != Type::Unknown)
+    // no initializer and no type annotation
+    if (node.init == nullptr && node.type == Type::Unknown)
+        throw std::runtime_error("Missing type annotation in variable declaration");
+    
+    // has initializer
+    if (node.init != nullptr)
     {
-        // if a variable is declared as one thing but the initializing value is something else, then throw error
+        node.init->accept(*this);
+
+        // infer type if no annotation
+        if (node.type == Type::Unknown)
+            node.type = node.init->type;
+    
+        // check conflicting types if annotation is present
         if (node.type != node.init->type)
             throw std::runtime_error("Type mismatch when declaring a variable");
     }
-    // if a variable isnt declared as anything then infer it's type
-    else
-    {
-        node.type = node.init->type;
-    }
-    
+
     VarSymbol varSymbol;
     varSymbol.name = node.name;
     varSymbol.type = node.type;
@@ -154,8 +180,20 @@ void AnalyzerVisitor::visit(While &node)
 
 void AnalyzerVisitor::visit(Return &node)
 {
-    node.value->accept(*this);
+    // void return from void function
+    if(currentFuncReturnType == Type::Void && node.value == nullptr)
+        return;
 
+    // attempted return from void function
+    if (currentFuncReturnType == Type::Void && node.value != nullptr)
+        throw std::runtime_error("Tried to return a value from a void function");
+    
+    // void return from non-void function
+    if (currentFuncReturnType != Type::Void && node.value == nullptr)
+        throw std::runtime_error("No return value from a non-void function");
+
+    // value return from typed function
+    node.value->accept(*this);
     if (currentFuncReturnType != node.value->type)
         throw std::runtime_error("Return type mismatch");
 }

@@ -49,7 +49,8 @@ void PrintVisitor::visit(VariableDecl &node)
     out << "VariableDecl(" << node.name << "): " << type_to_str.at(node.type) << "\n";
 
     push_indent(true);
-    node.init->accept(*this);
+    if (node.init)
+        node.init->accept(*this);
     pop_indent();
 }
 
@@ -102,8 +103,10 @@ void PrintVisitor::visit(Return &node)
 {
     print_prefix(true);
     out << "Return\n";
+
     push_indent(true);
-    node.value->accept(*this);
+    if (node.value)
+        node.value->accept(*this);
     pop_indent();
 }
 

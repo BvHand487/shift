@@ -181,9 +181,9 @@ std::unique_ptr<VariableDecl> Parser::parse_variable_decl()
             throw std::runtime_error("Expected a type after ':' in variable declaration");
     }
 
-    // mandatory initializaton for now
-    consume(tok_assignment, "Expected '=' after variable declaration");
-    std::unique_ptr<Expr> init = parse_expression();
+    std::unique_ptr<Expr> init = nullptr; 
+    if (match(tok_assignment))
+        init = std::move(parse_expression());
 
     consume(tok_delimiter, "Expected ';' after variable declaration");
 
@@ -226,6 +226,11 @@ std::unique_ptr<Assignment> Parser::parse_assignment()
 
 std::unique_ptr<Return> Parser::parse_return_stmt()
 {
+    // return;
+    if (match(tok_delimiter))
+        return std::make_unique<Return>(nullptr);
+
+    // return <expr>;
     std::unique_ptr<Expr> expression = parse_expression();
     consume(tok_delimiter, "Expected ';' after return");
 
@@ -245,11 +250,14 @@ std::unique_ptr<If> Parser::parse_if_stmt()
     if (check(tok_open_brace))
         then_block = parse_block();
     else
-        throw std::runtime_error("Expected '{' before 'if' body");
+        then_block = std::make_unique<Block>(parse_statement());
 
     if (match(tok_else))
     {
-        else_block = parse_block();
+        if (check(tok_open_brace))
+            else_block = parse_block();
+        else
+            else_block = std::make_unique<Block>(parse_statement());
     }
 
     return std::make_unique<If>(
@@ -267,7 +275,10 @@ std::unique_ptr<While> Parser::parse_while_stmt()
     condition = parse_expression();
     consume(tok_close_paren, "Expected ')' after 'while' condition");
 
-    body = parse_block();
+    if (check(tok_open_brace))
+        body = parse_block();
+    else
+        body = std::make_unique<Block>(parse_statement());
 
     return std::make_unique<While>(
         std::move(condition),

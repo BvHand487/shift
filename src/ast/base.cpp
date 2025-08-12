@@ -39,7 +39,15 @@ Assignment::Assignment(
     std::unique_ptr<Expr> rhs) : lhs(std::move(lhs)),
                                  rhs(std::move(rhs)) {}
 
+// constructor for a list of statements
 Block::Block(std::vector<std::unique_ptr<Statement>> stmts) : statements(std::move(stmts)) {}
+
+// constructor for single-statement bodies
+Block::Block(std::unique_ptr<Statement> stmt)
+{
+    statements.push_back(std::move(stmt));
+}
+
 
 If::If(
     std::unique_ptr<Expr> cond,

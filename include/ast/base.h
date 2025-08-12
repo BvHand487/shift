@@ -173,6 +173,8 @@ namespace ast
         std::vector<std::unique_ptr<Statement>> statements;
 
         Block(std::vector<std::unique_ptr<Statement>> stmts);
+        Block(std::unique_ptr<Statement> stmt);
+        
         void accept(Visitor &v) override;
     };
 

@@ -353,7 +353,7 @@ void CodegenVisitor::visit(Definition &node)
     if (function == nullptr)
     {
         node.type->accept(*this);
-        function = (llvm::Function *)lastValue;
+        function = (llvm::Function *) lastValue;
     }
 
     if (function == nullptr)

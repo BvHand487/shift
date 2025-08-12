@@ -73,30 +73,21 @@ This language was aimed to be similar to C-like languages, whilst offering a cle
     add(5, 4);  // should be 9
     ```
 
-- If statements are similar to the ones in other languages. There are 2 major problems however: the curly braces cannot be omitted and must always be present and the `else if` construct also doesn't exist:
+- If statements are similar to the ones in other languages:
     ```
     let x = 1234;
 
-    if (x > 0)
-    {
+    if (x == 0)
+        printf("zero!\n");
+    else if (x > 0)
         printf("positive!\n");
-    }
     else
-    {
-        if (x == 0)
-        {
-            printf("zero!\n");
-        }
-        else
-        {
-            printf("negative!\n");
-        }
-    }
+        printf("negative!\n");
     ```
 
 - The logical operators `&&`, `||` and `!` are interchangable with `and`, `or` and `not` respectively.
 
-- While should also be familiar. Again - the curly braces cannot be omitted and a `do` - `while` doesn't exist:
+- While should also be familiar. The only problem is that `do { ... } while` doesn't exist:
     ```
     let x = 0;
 
@@ -124,13 +115,11 @@ extern fn printf(fmt: str, ..) -> int;
 
 fn fib(n: int) -> int
 {
-    if (n == 0) {
+    if (n == 0)
         return 0;
-    }
 
-    if (n == 1) {
+    if (n == 1)
         return 1;
-    }
 
     return fib(n - 2) + fib(n - 1);
 }
@@ -138,12 +127,8 @@ fn fib(n: int) -> int
 fn main() -> int
 {
     let x = 6;
-
     let res = fib(x);
-
     printf("%d\n", res);
-
-    return 0;
 }
 ```
 
@@ -160,7 +145,6 @@ The output format is as follows:
 5 -> TRUE
 ...
 ```
-<br/>
 
 #### Code
 ```
@@ -168,15 +152,14 @@ extern fn printf(fmt: str, ..) -> int;
 
 fn is_prime(n: int) -> bool
 {
-    if (n <= 1) { return false; }
-    if (n == 2 or n == 3) { return true; }
+    if (n <= 1) return false;
+    if (n == 2 or n == 3) return true;
 
     let div = 2;
     while (div <= n / 2)
     {
-        if (n % div == 0) {
+        if (n % div == 0)
             return false;
-        }
 
         div = div + 1;
     }
@@ -187,22 +170,17 @@ fn is_prime(n: int) -> bool
 fn main() -> int
 {
     let x = 0;
-
     while (x < 200)
     {
         let is_prime = is_prime(x);
 
         printf("%d -> ", x);
-        if (is_prime) {
+        if (is_prime)
             printf("TRUE\n");
-        }
-        else {
+        else
             printf("FALSE\n");
-        }
 
         x = x + 1;
     }
-
-    return 0;
 }
 ```
