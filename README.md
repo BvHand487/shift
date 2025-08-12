@@ -48,14 +48,13 @@ This language was aimed to be similar to C-like languages, whilst offering a cle
 - Functions are indicated with the `fn` keyword followed by the function name. A `extern` before the `fn` keyword marks a function as extern and a `..` at the end of the parameter list marks it as having variable args.
 
 - All variables must be declared and that is done with the `let` keyword. Depending on the context, a type annotation might be required:
-    ```
+    ```cpp
     let a: int = 123;
     let b = 123;
     ```
 
 - Type annotations for variables and function paramaters are indicated by a colon, followed by the type. The only exception to this are the return types of a function, where the type is preceded by an arrow:
-    
-    ```
+    ```cpp
     fn foo(x: int, y: int) -> bool { ... }
     ...
     let x: int = 5;
@@ -64,7 +63,7 @@ This language was aimed to be similar to C-like languages, whilst offering a cle
     *Type annotations are not needed when the type can be inferred, e.g. you can write `let x = 5;`.*
 
 - Calling functions is as simple as writing the function name followed by parentheses which contain the arguments:
-    ```
+    ```cpp
     fn add(x: int, y: int) -> int
     {
         return x + y;
@@ -74,7 +73,7 @@ This language was aimed to be similar to C-like languages, whilst offering a cle
     ```
 
 - If statements are similar to the ones in other languages:
-    ```
+    ```cpp
     let x = 1234;
 
     if (x == 0)
@@ -88,7 +87,7 @@ This language was aimed to be similar to C-like languages, whilst offering a cle
 - The logical operators `&&`, `||` and `!` are interchangable with `and`, `or` and `not` respectively.
 
 - While should also be familiar. The only problem is that `do { ... } while` doesn't exist:
-    ```
+    ```cpp
     let x = 0;
 
     while (x < 100)
@@ -110,7 +109,7 @@ The table below shows the Fibonacci sequence from F<sub>0</sub> to F<sub>7</sub>
 | 0 | 1 | 1 | 2 | 3 | 5 | 8 |13 |
 
 #### Code
-```
+```cpp
 extern fn printf(fmt: str, ..) -> int;
 
 fn fib(n: int) -> int
@@ -147,7 +146,7 @@ The output format is as follows:
 ```
 
 #### Code
-```
+```cpp
 extern fn printf(fmt: str, ..) -> int;
 
 fn is_prime(n: int) -> bool
