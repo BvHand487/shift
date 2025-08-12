@@ -26,6 +26,8 @@ int token_op_to_precedence(TokenType type)
         return 12;
     case tok_slash:
         return 12;
+    case tok_percent:
+        return 12;
 
     case tok_plus:
         return 11;

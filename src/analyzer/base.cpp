@@ -143,6 +143,13 @@ void AnalyzerVisitor::visit(If &node)
 void AnalyzerVisitor::visit(While &node)
 {
     node.cond->accept(*this);
+
+    if (node.cond->type == Type::String)
+        throw std::runtime_error("If condition must be int or bool");
+
+    symbols->enterScope();
+    node.body->accept(*this);
+    symbols->exitScope();
 }
 
 void AnalyzerVisitor::visit(Return &node)
@@ -234,6 +241,7 @@ void AnalyzerVisitor::visit(BinaryOp &node)
     case binop_sub:
     case binop_mul:
     case binop_div:
+    case binop_mod:
         if (lt == Type::String)
         {
             throw std::runtime_error("Arithmetic operators require numeric operands");

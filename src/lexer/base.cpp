@@ -173,6 +173,9 @@ void Lexer::scan_token()
     case '/':
         add_token(tok_slash);
         break;
+    case '%':
+        add_token(tok_percent);
+        break;
     case '~':
         add_token(tok_tilde);
         break;

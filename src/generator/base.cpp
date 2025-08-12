@@ -195,6 +195,9 @@ void CodegenVisitor::visit(BinaryOp &node)
     case binop_div:
         lastValue = builder->CreateSDiv(l, r, "divtmp");
         return;
+    case binop_mod:
+        lastValue = builder->CreateSRem(l, r, "modtmp");
+        return;
     case binop_exp:
         // lastValue = builder->CreateF(l, r, "addtmp");
         return;
@@ -476,7 +479,8 @@ void CodegenVisitor::visit(If &node)
     builder->SetInsertPoint(thenBB);
     node.then_branch->accept(*this);
 
-    if (!llvm::isa<llvm::ReturnInst>(builder->GetInsertBlock()->getTerminator()))
+    auto terminator = builder->GetInsertBlock()->getTerminator();
+    if (!terminator || !llvm::isa<llvm::ReturnInst>(terminator))
         builder->CreateBr(mergedBB);
 
     thenBB = builder->GetInsertBlock();
@@ -487,7 +491,8 @@ void CodegenVisitor::visit(If &node)
         builder->SetInsertPoint(elseBB);
         node.else_branch->accept(*this);
 
-        if (!llvm::isa<llvm::ReturnInst>(builder->GetInsertBlock()->getTerminator()))
+        auto terminator = builder->GetInsertBlock()->getTerminator();
+        if (!terminator || !llvm::isa<llvm::ReturnInst>(terminator))
             builder->CreateBr(mergedBB);
 
         elseBB = builder->GetInsertBlock();
@@ -502,6 +507,38 @@ void CodegenVisitor::visit(If &node)
 
 void CodegenVisitor::visit(While &node)
 {
+    llvm::Function *func = builder->GetInsertBlock()->getParent();
+    llvm::BasicBlock *condBB = llvm::BasicBlock::Create(*context, "cond", func);
+    llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(*context, "body", func);
+    llvm::BasicBlock *mergedBB = llvm::BasicBlock::Create(*context, "merged");
+
+    builder->CreateBr(condBB);
+
+    // - - - CONDITION - - - //
+    builder->SetInsertPoint(condBB);
+    node.cond->accept(*this);
+    llvm::Value *cond = lastValue;
+
+    if (!cond)
+    {
+        lastValue = nullptr;
+        return;
+    }
+
+    builder->CreateCondBr(cond, bodyBB, mergedBB);
+
+    // - - - BODY - - - //
+    builder->SetInsertPoint(bodyBB);
+    node.body->accept(*this);
+
+    auto terminator = builder->GetInsertBlock()->getTerminator();
+    if (!terminator || !llvm::isa<llvm::ReturnInst>(terminator))
+        builder->CreateBr(condBB);
+
+    // - - - MERGED - - - //
+    func->insert(func->end(), mergedBB);
+    builder->SetInsertPoint(mergedBB);
+
     lastValue = nullptr;
 }
 

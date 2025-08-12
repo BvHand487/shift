@@ -32,7 +32,7 @@ void PrintVisitor::visit(Number &node)
 void PrintVisitor::visit(String &node)
 {
     print_prefix(true);
-    out << "String(" << node.value << "): " << type_to_str.at(node.type) << "\n";
+    out << "String(" << to_escaped_string(node.value) << "): " << type_to_str.at(node.type) << "\n";
 }
 
 void PrintVisitor::visit(Boolean &node)

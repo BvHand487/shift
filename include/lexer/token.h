@@ -42,6 +42,7 @@ enum TokenType
     tok_minus,
     tok_star,
     tok_slash,
+    tok_percent,
     tok_exponentiation,
 
     tok_caret,
@@ -95,6 +96,7 @@ enum TokenType
     ROW(tok_minus, "tok_minus")                   \
     ROW(tok_star, "tok_star")                     \
     ROW(tok_slash, "tok_slash")                   \
+    ROW(tok_percent, "tok_percent")               \
     ROW(tok_exponentiation, "tok_exponentiation") \
     ROW(tok_caret, "tok_caret")                   \
     ROW(tok_tilde, "tok_tilde")                   \
@@ -142,6 +144,7 @@ enum TokenType
     ROW(tok_minus, binop_sub)          \
     ROW(tok_star, binop_mul)           \
     ROW(tok_slash, binop_div)          \
+    ROW(tok_percent, binop_mod)        \
     ROW(tok_exponentiation, binop_exp) \
     ROW(tok_and, binop_and)            \
     ROW(tok_or, binop_or)              \
@@ -185,7 +188,6 @@ const std::unordered_map<TokenType, BinaryOpType> token_to_binary_op = {
 const std::unordered_map<TokenType, UnaryOpType> token_to_unary_op = {
     UNARY_OPERATOR_MAPPINGS};
 #undef ROW
-
 
 struct Position
 {

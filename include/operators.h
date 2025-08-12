@@ -12,6 +12,7 @@ enum BinaryOpType
     binop_sub,
     binop_mul,
     binop_div,
+    binop_mod,
     binop_exp,
 
     // Logical
@@ -47,6 +48,7 @@ enum UnaryOpType
     ROW(binop_sub, "Sub") \
     ROW(binop_mul, "Mul") \
     ROW(binop_div, "Div") \
+    ROW(binop_mod, "Mod") \
     ROW(binop_exp, "Exp") \
     ROW(binop_and, "And") \
     ROW(binop_or, "Or") \

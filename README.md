@@ -75,26 +75,38 @@ This language was aimed to be similar to C-like languages, whilst offering a cle
 
 - If statements are similar to the ones in other languages. There are 2 major problems however: the curly braces cannot be omitted and must always be present and the `else if` construct also doesn't exist:
     ```
-    let x = 85347;
+    let x = 1234;
 
     if (x > 0)
     {
-        printf("positive!");
+        printf("positive!\n");
     }
     else
     {
         if (x == 0)
         {
-            printf("zero!");
+            printf("zero!\n");
         }
         else
         {
-            printf("negative!");
+            printf("negative!\n");
         }
     }
     ```
 
 - The logical operators `&&`, `||` and `!` are interchangable with `and`, `or` and `not` respectively.
+
+- While should also be familiar. Again - the curly braces cannot be omitted and a `do` - `while` doesn't exist:
+    ```
+    let x = 0;
+
+    while (x < 100)
+    {
+        printf("%d\n", x);
+        x = x + 1;
+    }
+    ```
+
 
 ## Examples
 ### Example 1 - Printing the N-th Fibonacci number:
@@ -105,7 +117,8 @@ The table below shows the Fibonacci sequence from F<sub>0</sub> to F<sub>7</sub>
 | F<sub>0</sub> | F<sub>1</sub> | F<sub>2</sub> | F<sub>3</sub> | F<sub>4</sub> | F<sub>5</sub> | F<sub>6</sub> | F<sub>7</sub> |
 |---|---|---|---|---|---|---|---|
 | 0 | 1 | 1 | 2 | 3 | 5 | 8 |13 |
-<br/>
+
+#### Code
 ```
 extern fn printf(fmt: str, ..) -> int;
 
@@ -129,6 +142,66 @@ fn main() -> int
     let res = fib(x);
 
     printf("%d\n", res);
+
+    return 0;
+}
+```
+
+### Example 2 - Finding prime numbers:
+The following program computes which numbers are primes from 0-200 and prints them out using `printf`.
+<br/>
+The output format is as follows:
+```
+0 -> FALSE
+1 -> FALSE
+2 -> TRUE
+3 -> TRUE
+4 -> FALSE
+5 -> TRUE
+...
+```
+<br/>
+
+#### Code
+```
+extern fn printf(fmt: str, ..) -> int;
+
+fn is_prime(n: int) -> bool
+{
+    if (n <= 1) { return false; }
+    if (n == 2 or n == 3) { return true; }
+
+    let div = 2;
+    while (div <= n / 2)
+    {
+        if (n % div == 0) {
+            return false;
+        }
+
+        div = div + 1;
+    }
+
+    return true;
+}
+
+fn main() -> int
+{
+    let x = 0;
+
+    while (x < 200)
+    {
+        let is_prime = is_prime(x);
+
+        printf("%d -> ", x);
+        if (is_prime) {
+            printf("TRUE\n");
+        }
+        else {
+            printf("FALSE\n");
+        }
+
+        x = x + 1;
+    }
 
     return 0;
 }

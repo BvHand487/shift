@@ -195,6 +195,9 @@ std::unique_ptr<Statement> Parser::parse_statement()
     if (check(tok_let))
         return parse_variable_decl();
 
+    if (check(tok_identifier) && next().type == tok_assignment)
+        return parse_assignment();
+
     if (match(tok_return))
         return parse_return_stmt();
 
@@ -203,9 +206,6 @@ std::unique_ptr<Statement> Parser::parse_statement()
 
     if (match(tok_while))
         return parse_while_stmt();
-
-    if (check(tok_open_brace))
-        return parse_block();
 
     auto expr = parse_expression();
     consume(tok_delimiter, "Expected ';' after expression.");
@@ -249,7 +249,6 @@ std::unique_ptr<If> Parser::parse_if_stmt()
 
     if (match(tok_else))
     {
-        consume(tok_open_brace, "Expected '{' before 'else' body");
         else_block = parse_block();
     }
 
@@ -268,7 +267,6 @@ std::unique_ptr<While> Parser::parse_while_stmt()
     condition = parse_expression();
     consume(tok_close_paren, "Expected ')' after 'while' condition");
 
-    consume(tok_open_brace, "Expected '{' before 'while' body");
     body = parse_block();
 
     return std::make_unique<While>(
